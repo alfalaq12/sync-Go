@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package agent;
+
+option go_package = "./internal/agent/proto";
+
+service SyncAgent {
+  // Agent connects and waits for commands (Heartbeat + Job relay)
+  rpc Session(stream Heartbeat) returns (stream ControlMessage);
+
+  // Agent pushes data to Master during a sync job
+  rpc PushData(stream DataBatch) returns (SyncResult);
+}
+
+message Heartbeat {
+  string agent_token = 1;
+  string node_code = 2;
+  string status = 3; // e.g., "IDLE", "SYNCING"
+}
+
+message ControlMessage {
+  enum Command {
+    PING = 0;
+    START_SYNC = 1;
+    STOP_SYNC = 2;
+  }
+  Command cmd = 1;
+  string payload = 2; // JSON containing Job Details
+  string job_id = 3;
+}
+
+message DataBatch {
+  string job_id = 1;
+  string table_name = 2;
+  repeated string columns = 3;
+  repeated Row rows = 4;
+}
+
+message Row {
+  repeated string values = 1;
+}
+
+message SyncResult {
+  string job_id = 1;
+  bool success = 2;
+  int64 rows_affected = 3;
+  string error_message = 4;
+}
+
+message Empty {}

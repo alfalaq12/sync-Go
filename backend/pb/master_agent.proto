@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/bintang/remake-dsp-backend/pb";
+
+service MasterAgentService {
+  rpc RegisterAgent(AgentRegistrationRequest) returns (AgentRegistrationResponse);
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  rpc StreamWorkerLogs(stream LogMessage) returns (LogAck);
+}
+
+message AgentRegistrationRequest {
+  string agent_id = 1;
+  string hostname = 2;
+  string ip_address = 3;
+}
+
+message AgentRegistrationResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message HeartbeatRequest {
+  string agent_id = 1;
+  string status = 2;
+}
+
+message HeartbeatResponse {
+  bool acknowledged = 1;
+}
+
+message LogMessage {
+  string agent_id = 1;
+  string job_id = 2;
+  string level = 3;
+  string message = 4;
+  int64 timestamp = 5;
+}
+
+message LogAck {
+  int32 received = 1;
+}
