@@ -284,7 +284,35 @@ func seedDefaultData(ctx context.Context, pool *pgxpool.Pool) {
 		}
 	}
 
-	// 3. Groups & Roles (Left empty by default so clients can configure their own)
+	// 3. Default Roles
+	var roleCount int
+	err = pool.QueryRow(ctx, "SELECT COUNT(*) FROM M_ROLES").Scan(&roleCount)
+	if err == nil && roleCount == 0 {
+		roles := []struct {
+			Name        string
+			Description string
+		}{
+			{"Administrator", "Akses penuh ke semua fitur, pengaturan, dan manajemen pengguna."},
+			{"Manager", "Dapat mengelola infrastruktur data, job, dan monitoring."},
+			{"Operator", "Fokus pada eksekusi job harian dan pemantauan log."},
+			{"Viewer", "Akses baca saja (Read-only) untuk pemantauan status sistem."},
+		}
+
+		for _, r := range roles {
+			_, err = pool.Exec(ctx, "INSERT INTO M_ROLES (name, description) VALUES ($1, $2)", r.Name, r.Description)
+			if err != nil {
+				log.Printf("Failed to seed role %s: %v", r.Name, err)
+			}
+		}
+		log.Println("Default roles seeded successfully.")
+	}
+
+	// 4. Default Groups (Optional placeholder)
+	var groupCount int
+	err = pool.QueryRow(ctx, "SELECT COUNT(*) FROM M_GROUPS").Scan(&groupCount)
+	if err == nil && groupCount == 0 {
+		_, err = pool.Exec(ctx, "INSERT INTO M_GROUPS (name, description) VALUES ($1, $2)", "IT Infrastructure", "Default group for system maintainers.")
+	}
 }
 
 func migrateExistingCredentials(ctx context.Context, pool *pgxpool.Pool) {

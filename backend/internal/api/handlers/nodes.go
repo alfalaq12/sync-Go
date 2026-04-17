@@ -48,7 +48,7 @@ func (h *NodeHandler) ListNodes(c *gin.Context) {
 	rows, err := h.db.Query(c.Request.Context(), `
 		SELECT m_node_id, node_code, node_name, hostname, ip_address, connection_mode, status, notes,
 		       bandwidth_limit, enable_time_sync, offline_mode, cloned_node, agent_version, owner,
-		       is_distributed, agent_token,
+		       is_distributed, agent_token, batch_size,
 		       TO_CHAR(last_seen, 'YYYY-MM-DD HH24:MI:SS') as last_seen,
 		       TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS') as created_at,
 		       TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI:SS') as updated_at

@@ -45,8 +45,9 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	// DB-backed authentication
 	var passwordHash string
+	var role string
 	err := h.db.QueryRow(c.Request.Context(),
-		"SELECT password_hash FROM S_USERS WHERE username = $1", req.Username).Scan(&passwordHash)
+		"SELECT password_hash, role FROM S_USERS WHERE username = $1", req.Username).Scan(&passwordHash, &role)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
@@ -60,8 +61,9 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	// Generate JWT token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": req.Username,
-		"exp": time.Now().Add(time.Hour * 24).Unix(),
+		"sub":  req.Username,
+		"role": role,
+		"exp":  time.Now().Add(time.Hour * 24).Unix(),
 	})
 
 	tokenString, err := token.SignedString([]byte(h.cfg.JWTSecret))
@@ -71,8 +73,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, LoginResponse{
-		Token: tokenString,
-		User:  req.Username,
+	c.JSON(http.StatusOK, gin.H{
+		"token": tokenString,
+		"user":  req.Username,
+		"role":  role,
 	})
 }
+

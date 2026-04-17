@@ -48,7 +48,7 @@ func SetupRouter(db *pgxpool.Pool, cfg *config.Config) *gin.Engine {
 
 	// Protected routes
 	protected := r.Group("/api/v1")
-	protected.Use(middleware.AuthMiddleware(cfg))
+	protected.Use(middleware.AuthMiddleware(cfg), middleware.RBACMiddleware())
 	{
 		protected.GET("/dashboard", func(c *gin.Context) {
 			userID := c.GetString("userID")

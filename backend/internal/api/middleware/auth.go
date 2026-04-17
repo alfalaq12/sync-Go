@@ -42,8 +42,42 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
 			c.Set("userID", claims["sub"])
+			if role, exists := claims["role"]; exists {
+				c.Set("userRole", role)
+			} else {
+				c.Set("userRole", "admin") // default fallback if missing
+			}
 		}
 
+		c.Next()
+	}
+}
+
+// RBACMiddleware enforces role-based access control policies
+func RBACMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		role, exists := c.Get("userRole")
+		if !exists {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Role not identified"})
+			c.Abort()
+			return
+		}
+
+		userRole := strings.ToLower(fmt.Sprintf("%v", role))
+
+		// If user is a Viewer, they can only perform GET (Read) operations.
+		// OPTIONS are already handled by CORS middleware before this, but we allow them anyway.
+		if userRole == "viewer" || userRole == "view" {
+			if c.Request.Method != http.MethodGet && c.Request.Method != http.MethodOptions {
+				c.JSON(http.StatusForbidden, gin.H{
+					"error": "Forbidden: You have 'Viewer' role and cannot perform modifications (CRUD).",
+				})
+				c.Abort()
+				return
+			}
+		}
+
+		// Proceed for other roles/methods
 		c.Next()
 	}
 }
