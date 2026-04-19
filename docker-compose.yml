@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: B1ntang12!!
       POSTGRES_DB: dsp
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
@@ -41,9 +41,11 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=http://117.53.44.28:8080/api/v1
     container_name: syncgo-frontend
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
+      - NEXT_PUBLIC_API_URL=http://117.53.44.28:8080/api/v1
     ports:
       - "3000:3000"
     depends_on:
