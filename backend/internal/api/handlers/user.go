@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -19,16 +20,16 @@ func NewUserHandler(db *pgxpool.Pool) *UserHandler {
 // ─── Users ───────────────────────────────────────────────────────────
 
 type UserResponse struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Branch    string `json:"branch"`
-	Email     string `json:"email"`
-	LastLogin string `json:"lastLogin"`
-    Role      string `json:"role"`
+	ID        string  `json:"id"`
+	Name      string  `json:"name"`
+	Branch    string  `json:"branch"`
+	Email     string  `json:"email"`
+	LastLogin *string `json:"lastLogin"`
+	Role      string  `json:"role"`
 }
 
 func (h *UserHandler) ListUsers(c *gin.Context) {
-	rows, err := h.db.Query(c.Request.Context(), "SELECT id, username, role, created_at FROM S_USERS")
+	rows, err := h.db.Query(c.Request.Context(), "SELECT username, role, branch, email, last_login FROM S_USERS")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
 		return
@@ -37,18 +38,32 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 
 	var users []UserResponse
 	for rows.Next() {
-		var id int
 		var username, role string
-		var createdAt interface{}
-		
-		if err := rows.Scan(&id, &username, &role, &createdAt); err == nil {
+		var branch, email *string
+		var lastLogin *time.Time
+
+		if err := rows.Scan(&username, &role, &branch, &email, &lastLogin); err == nil {
+			var bStr, eStr string
+			if branch != nil {
+				bStr = *branch
+			}
+			if email != nil {
+				eStr = *email
+			}
+			
+			var llStr *string
+			if lastLogin != nil {
+				s := lastLogin.Format("2006-01-02 15:04:05")
+				llStr = &s
+			}
+
 			users = append(users, UserResponse{
-				ID:        username, 
+				ID:        username,
 				Name:      username,
-                Role:      role,
-				Branch:    "System HQ", 
-				Email:     username + "@sync.go", 
-				LastLogin: "Online", 
+				Role:      role,
+				Branch:    bStr,
+				Email:     eStr,
+				LastLogin: llStr,
 			})
 		}
 	}
@@ -56,58 +71,62 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 }
 
 func (h *UserHandler) CreateUser(c *gin.Context) {
-    var req struct {
-        Username string `json:"username" binding:"required"`
-        Password string `json:"password" binding:"required"`
-        Role     string `json:"role" binding:"required"`
-    }
-    if err := c.ShouldBindJSON(&req); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-        return
-    }
+	var req struct {
+		Username string `json:"username" binding:"required"`
+		Password string `json:"password" binding:"required"`
+		Role     string `json:"role" binding:"required"`
+		Branch   string `json:"branch"`
+		Email    string `json:"email"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
-    hash, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-    _, err := h.db.Exec(c.Request.Context(), 
-        "INSERT INTO S_USERS (username, password_hash, role) VALUES ($1, $2, $3)", 
-        req.Username, string(hash), req.Role)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
-        return
-    }
-    c.JSON(http.StatusCreated, gin.H{"message": "User created successfully"})
+	hash, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	_, err := h.db.Exec(c.Request.Context(),
+		"INSERT INTO S_USERS (username, password_hash, role, branch, email) VALUES ($1, $2, $3, $4, $5)",
+		req.Username, string(hash), req.Role, req.Branch, req.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"message": "User created successfully"})
 }
 
 func (h *UserHandler) UpdateUser(c *gin.Context) {
-    id := c.Param("id") // id here refers to username in this legacy-to-modern structure
-    var req struct {
-        Username string `json:"username"`
-        Role     string `json:"role"`
-        Password string `json:"password"` // optional update
-    }
-    if err := c.ShouldBindJSON(&req); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-        return
-    }
+	id := c.Param("id") // id here refers to username in this legacy-to-modern structure
+	var req struct {
+		Username string `json:"username"`
+		Role     string `json:"role"`
+		Password string `json:"password"` // optional update
+		Branch   string `json:"branch"`
+		Email    string `json:"email"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
-    if req.Password != "" {
-        hash, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-        _, err := h.db.Exec(c.Request.Context(), 
-            "UPDATE S_USERS SET username = $1, role = $2, password_hash = $3 WHERE username = $4", 
-            req.Username, req.Role, string(hash), id)
-        if err != nil {
-            c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user with password"})
-            return
-        }
-    } else {
-        _, err := h.db.Exec(c.Request.Context(), 
-            "UPDATE S_USERS SET username = $1, role = $2 WHERE username = $3", 
-            req.Username, req.Role, id)
-        if err != nil {
-            c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
-            return
-        }
-    }
-    c.JSON(http.StatusOK, gin.H{"message": "User updated successfully"})
+	if req.Password != "" {
+		hash, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		_, err := h.db.Exec(c.Request.Context(),
+			"UPDATE S_USERS SET username = $1, role = $2, password_hash = $3, branch = $4, email = $5 WHERE username = $6",
+			req.Username, req.Role, string(hash), req.Branch, req.Email, id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user with password"})
+			return
+		}
+	} else {
+		_, err := h.db.Exec(c.Request.Context(),
+			"UPDATE S_USERS SET username = $1, role = $2, branch = $3, email = $4 WHERE username = $5",
+			req.Username, req.Role, req.Branch, req.Email, id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
+			return
+		}
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "User updated successfully"})
 }
 
 func (h *UserHandler) DeleteUser(c *gin.Context) {

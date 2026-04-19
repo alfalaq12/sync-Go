@@ -129,14 +129,32 @@ func (e *Engine) ExecuteSync(ctx context.Context, jobID int) error {
 
 	// 5. Execute each query rule
 	for rows.Next() {
-		var sq, tt, epq, epotq, upq, upotq string
-		var syncMethod, upsertKeysRaw, incCol string
+		var sqPtr, ttPtr, epqPtr, epotqPtr, upqPtr, upotqPtr *string
+		var syncMethodPtr, upsertKeysRawPtr, incColPtr *string
 		var trunc bool
 		var batchSize int
-		if err := rows.Scan(&sq, &tt, &trunc, &batchSize, &epq, &epotq, &upq, &upotq, &syncMethod, &upsertKeysRaw, &incCol); err != nil {
+		
+		if err := rows.Scan(&sqPtr, &ttPtr, &trunc, &batchSize, &epqPtr, &epotqPtr, &upqPtr, &upotqPtr, &syncMethodPtr, &upsertKeysRawPtr, &incColPtr); err != nil {
 			e.LogToDB(ctx, jobID, sourceNodeID, "ERROR", "Engine", fmt.Sprintf("Failed to scan schema details: %v", err))
 			return err
 		}
+
+		getString := func(ptr *string) string {
+			if ptr == nil {
+				return ""
+			}
+			return *ptr
+		}
+
+		sq := getString(sqPtr)
+		tt := getString(ttPtr)
+		epq := getString(epqPtr)
+		epotq := getString(epotqPtr)
+		upq := getString(upqPtr)
+		upotq := getString(upotqPtr)
+		syncMethod := getString(syncMethodPtr)
+		upsertKeysRaw := getString(upsertKeysRawPtr)
+		incCol := getString(incColPtr)
 		if batchSize <= 0 {
 			batchSize = 5000 // default optimal buffer
 		}

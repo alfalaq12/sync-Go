@@ -59,6 +59,13 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
+	// Update last login
+	_, err = h.db.Exec(c.Request.Context(), "UPDATE S_USERS SET last_login = NOW() WHERE username = $1", req.Username)
+	if err != nil {
+		log.Printf("Failed to update last login for user %s: %v", req.Username, err)
+		// We don't return error here because login is still successful
+	}
+
 	// Generate JWT token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub":  req.Username,

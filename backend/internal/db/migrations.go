@@ -233,6 +233,11 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool) {
 		`ALTER TABLE M_NODE ADD COLUMN IF NOT EXISTS is_distributed BOOLEAN DEFAULT false`,
 		`ALTER TABLE M_NODE ADD COLUMN IF NOT EXISTS agent_token VARCHAR(255)`,
 		`ALTER TABLE M_NODE ADD COLUMN IF NOT EXISTS batch_size INT DEFAULT 1000`,
+
+		// Dynamic User Metadata
+		`ALTER TABLE S_USERS ADD COLUMN IF NOT EXISTS branch VARCHAR(100)`,
+		`ALTER TABLE S_USERS ADD COLUMN IF NOT EXISTS email VARCHAR(255)`,
+		`ALTER TABLE S_USERS ADD COLUMN IF NOT EXISTS last_login TIMESTAMP`,
 	}
 
 	for _, q := range queries {
@@ -252,8 +257,14 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool) {
 	migrateExistingCredentials(ctx, pool)
 
 	// 3. Fix Sequences (Prevent SQLSTATE 23505 if IDs get out of sync)
-	_, _ = pool.Exec(ctx, "SELECT setval('job_log_id_seq', (SELECT COALESCE(MAX(id), 1) FROM JOB_LOG))")
-
+	_, _ = pool.Exec(ctx, "SELECT setval('job_log_id_seq', (SELECT COALESCE(MAX(id), 1000) FROM JOB_LOG))")
+	_, _ = pool.Exec(ctx, "SELECT setval('s_users_id_seq', (SELECT COALESCE(MAX(id), 1000) FROM S_USERS))")
+	_, _ = pool.Exec(ctx, "SELECT setval('m_node_m_node_id_seq', (SELECT COALESCE(MAX(m_node_id), 1000) FROM M_NODE))")
+	_, _ = pool.Exec(ctx, "SELECT setval('m_schema_m_schema_id_seq', (SELECT COALESCE(MAX(m_schema_id), 1000) FROM M_SCHEMA))")
+	_, _ = pool.Exec(ctx, "SELECT setval('m_schema_details_m_schema_details_id_seq', (SELECT COALESCE(MAX(m_schema_details_id), 1000) FROM M_SCHEMA_DETAILS))")
+	_, _ = pool.Exec(ctx, "SELECT setval('m_schema_jobs_m_schema_job_id_seq', (SELECT COALESCE(MAX(m_schema_job_id), 1000) FROM M_SCHEMA_JOBS))")
+	_, _ = pool.Exec(ctx, "SELECT setval('m_credentials_m_credential_id_seq', (SELECT COALESCE(MAX(m_credential_id), 1000) FROM M_CREDENTIALS))")
+	_, _ = pool.Exec(ctx, "SELECT setval('sd_jobs_id_seq', (SELECT COALESCE(MAX(id), 1000) FROM SD_JOBS))")
 	log.Println("Database migrations completed successfully.")
 }
 

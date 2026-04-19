@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: syncgo-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: B1ntang12!!
+      POSTGRES_DB: dsp
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d dsp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: syncgo-backend
+    environment:
+      - PORT=8080
+      - GRPC_PORT=9090
+      - DATABASE_URL=postgres://postgres:B1ntang12!!@db:5432/dsp?sslmode=disable
+      - JWT_SECRET=supersecret-dsp-key-change-in-production
+    ports:
+      - "8080:8080"
+      - "9090:9090"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: syncgo-frontend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  pgdata:
