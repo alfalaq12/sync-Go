@@ -1,21 +1,38 @@
 package router
 
 import (
+	"os"
+	"strings"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/bintang/remake-dsp-backend/internal/api/handlers"
 	"github.com/bintang/remake-dsp-backend/internal/api/middleware"
 	"github.com/bintang/remake-dsp-backend/internal/config"
 	"github.com/bintang/remake-dsp-backend/internal/syncengine"
-	"time"
 )
 
 func SetupRouter(db *pgxpool.Pool, cfg *config.Config) *gin.Engine {
 	r := gin.Default()
 
-	// CORS middleware
+	// CORS middleware — whitelist specific origins instead of wildcard
+	allowedOrigins := map[string]bool{
+		"http://localhost:3000": true,
+		"http://127.0.0.1:3000": true,
+	}
+	// Allow extra origins from environment (comma-separated)
+	if extra := os.Getenv("CORS_ALLOWED_ORIGINS"); extra != "" {
+		for _, o := range strings.Split(extra, ",") {
+			allowedOrigins[strings.TrimSpace(o)] = true
+		}
+	}
+
 	r.Use(func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		origin := c.Request.Header.Get("Origin")
+		if allowedOrigins[origin] {
+			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
+		}
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
@@ -44,6 +61,7 @@ func SetupRouter(db *pgxpool.Pool, cfg *config.Config) *gin.Engine {
 	public := r.Group("/api/v1")
 	{
 		public.POST("/login", middleware.RateLimiter(5, time.Minute), authHandler.Login)
+		public.POST("/logout", authHandler.Logout)
 	}
 
 	// Protected routes

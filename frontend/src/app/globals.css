@@ -42,60 +42,60 @@
   --radius-xl: calc(var(--radius) * 1.4);
 }
 
-:root {
-  --background: #F5F7FA;
-  --foreground: #0F172A;
-  --card: #FFFFFF;
-  --card-foreground: #0F172A;
-  --popover: #FFFFFF;
-  --popover-foreground: #0F172A;
-  --primary: #1E90FF;
-  --primary-foreground: #FFFFFF;
-  --secondary: #00C6AD;
-  --secondary-foreground: #FFFFFF;
-  --muted: #F1F5F9;
-  --muted-foreground: #64748B;
-  --accent: #1E90FF;
-  --accent-foreground: #FFFFFF;
-  --destructive: #EF4444;
-  --destructive-foreground: #FFFFFF;
-  --border: #E2E8F0;
-  --input: #E2E8F0;
-  --ring: #1E90FF;
-  --radius: 0.75rem;
-  --sidebar: #0F2444;
-  --sidebar-foreground: #FFFFFF;
-  --sidebar-primary: #1E90FF;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #1a3a5c;
-  --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: #1a3a5c;
-  --sidebar-ring: #1E90FF;
-}
-
-.dark {
-  --background: #0F172A;
-  --foreground: #F8FAFC;
-  --card: #1E293B;
-  --card-foreground: #F8FAFC;
-  --popover: #1E293B;
-  --popover-foreground: #F8FAFC;
-  --primary: #3B82F6;
-  --primary-foreground: #FFFFFF;
-  --secondary: #00C6AD;
-  --secondary-foreground: #FFFFFF;
-  --muted: #334155;
-  --muted-foreground: #94A3B8;
-  --accent: #3B82F6;
-  --accent-foreground: #FFFFFF;
-  --destructive: #EF4444;
-  --destructive-foreground: #FFFFFF;
-  --border: #334155;
-  --input: #334155;
-  --ring: #3B82F6;
-}
-
 @layer base {
+  :root {
+    --background: #F5F7FA;
+    --foreground: #0F172A;
+    --card: #FFFFFF;
+    --card-foreground: #0F172A;
+    --popover: #FFFFFF;
+    --popover-foreground: #0F172A;
+    --primary: #1E90FF;
+    --primary-foreground: #FFFFFF;
+    --secondary: #00C6AD;
+    --secondary-foreground: #FFFFFF;
+    --muted: #F1F5F9;
+    --muted-foreground: #64748B;
+    --accent: #1E90FF;
+    --accent-foreground: #FFFFFF;
+    --destructive: #EF4444;
+    --destructive-foreground: #FFFFFF;
+    --border: #E2E8F0;
+    --input: #E2E8F0;
+    --ring: #1E90FF;
+    --radius: 0.75rem;
+    --sidebar: #0F2444;
+    --sidebar-foreground: #FFFFFF;
+    --sidebar-primary: #1E90FF;
+    --sidebar-primary-foreground: #FFFFFF;
+    --sidebar-accent: #1a3a5c;
+    --sidebar-accent-foreground: #FFFFFF;
+    --sidebar-border: #1a3a5c;
+    --sidebar-ring: #1E90FF;
+  }
+
+  .dark {
+    --background: #020617;
+    --foreground: #F8FAFC;
+    --card: #0F172A;
+    --card-foreground: #F8FAFC;
+    --popover: #0F172A;
+    --popover-foreground: #F8FAFC;
+    --primary: #3B82F6;
+    --primary-foreground: #FFFFFF;
+    --secondary: #00C6AD;
+    --secondary-foreground: #FFFFFF;
+    --muted: #1E293B;
+    --muted-foreground: #94A3B8;
+    --accent: #3B82F6;
+    --accent-foreground: #FFFFFF;
+    --destructive: #EF4444;
+    --destructive-foreground: #FFFFFF;
+    --border: #1E293B;
+    --input: #1E293B;
+    --ring: #3B82F6;
+  }
+
   * {
     @apply border-border outline-ring/50;
   }
@@ -125,13 +125,15 @@
   background: #94A3B8;
 }
 
+.dark .premium-scrollbar::-webkit-scrollbar-thumb {
+    background: #334155;
+}
+
 /* Enterprise Components */
 .enterprise-card {
-  background: #FFFFFF;
+  @apply bg-card text-card-foreground border border-border transition-all duration-300;
   border-radius: 12px;
-  border: 1px solid #E2E8F0;
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-  transition: all 0.3s ease;
 }
 
 .enterprise-card:hover {
@@ -139,14 +141,11 @@
 }
 
 .premium-input {
-  border-radius: 8px;
-  border: 1.5px solid #E2E8F0;
-  padding: 10px 14px;
-  transition: all 0.2s ease;
+  @apply bg-card text-foreground border-[1.5px] border-border rounded-lg px-[14px] py-[10px] transition-all duration-200;
 }
 
 .premium-input:focus {
-  border-color: #1E90FF;
+  border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(30, 144, 255, 0.1);
   outline: none;
 }
@@ -159,43 +158,11 @@
 }
 
 .premium-button-primary {
-  background: #1E90FF;
-  color: #FFFFFF;
+  background: var(--primary);
+  color: var(--primary-foreground);
 }
 
 .premium-button-primary:hover {
-  background: #1c86ee;
   transform: translateY(-1px);
-}
-
-/* Patterns and Overlays */
-.grid-pattern {
-  background-image: radial-gradient(#ffffff20 1px, transparent 1px);
-  background-size: 24px 24px;
-}
-
-.dot-pattern {
-  background-image: 
-    radial-gradient(#ffffff15 0.5px, transparent 0.5px),
-    radial-gradient(#ffffff15 0.5px, transparent 0.5px);
-  background-size: 20px 20px;
-  background-position: 0 0, 10px 10px;
-}
-@keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-.animate-shimmer {
-  animation: shimmer 3s linear infinite;
-}
-
-@keyframes pulsate {
-  0% { opacity: 1; }
-  50% { opacity: 0.7; }
-  100% { opacity: 1; }
-}
-
-.animate-pulsate {
-  animation: pulsate 2s ease-in-out infinite;
+  opacity: 0.9;
 }

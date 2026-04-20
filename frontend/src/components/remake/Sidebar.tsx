@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRouter, usePathname } from "next/navigation";
+import { logout } from "@/lib/api";
 
 interface NavItem {
   title: string;
@@ -20,59 +21,90 @@ interface NavItem {
 
 const menuData: NavItem[] = [
   {
-    title: "SISTEM UTAMA",
+    title: "MAIN",
     section: true,
     items: [
       { title: "Dashboard", icon: LayoutGrid, href: "/dashboard" },
     ],
   },
   {
-    title: "MANAJEMEN USER",
+    title: "USER",
     section: true,
     items: [
-      { title: "Profil Pengguna", href: "/dashboard/user/profile" },
-      { title: "Grup & Tim", href: "/dashboard/user/groups" },
-      { title: "Hak Akses (Role)", href: "/dashboard/user/role" },
-      { title: "Kebijakan (Policy)", href: "/dashboard/user/policy" },
-      { title: "Sesi Aktif", href: "/dashboard/user/sessions" },
+      { title: "Profile", href: "/dashboard/user/profile" },
+      { title: "Groups", href: "/dashboard/user/groups" },
+      { title: "Role", href: "/dashboard/user/role" },
+      { title: "Policy", href: "/dashboard/user/policy" },
+      { title: "Sessions", href: "/dashboard/user/sessions" },
     ],
   },
   {
-    title: "KONTROL MASTER",
-    section: true,
-    items: [
-      { title: "Pengaturan Utama", href: "/dashboard/coming-soon/master-settings" },
-      { title: "Daftar Node", href: "/dashboard/nodes" },
-      { title: "Log Aktivitas", href: "/dashboard/logs" },
-      { title: "Notifikasi", href: "/dashboard/coming-soon/notifications" },
-      { title: "Instalasi Remote", href: "/dashboard/coming-soon/remote-install" },
-      { title: "Konfigurasi Interface", href: "/dashboard/coming-soon/interface" },
-    ],
-  },
-  {
-    title: "KONSOLIDASI DATA",
+    title: "MASTER",
     section: true,
     items: [
       { 
-        title: "Konfigurasi Agent", 
+        title: "Settings", 
         items: [
-          { title: "Agent Settings", href: "/dashboard/coming-soon/agent-settings" },
-          { title: "Download Binary", href: "/dashboard/coming-soon/download" },
-          { title: "Eksternal Log", href: "/dashboard/coming-soon/external-logging" },
+          { title: "Settings", href: "/dashboard/coming-soon/master-settings" }
         ] 
       },
-      { title: "Struktur Schema", icon: Database, href: "/dashboard/schema" },
-      { title: "Brankas Vault", icon: Key, href: "/dashboard/credentials" },
-      { title: "Topologi Jaringan", icon: Globe, href: "/dashboard/network" },
-      { title: "Antrean Job", icon: Activity, href: "/dashboard/jobs" },
-      { title: "Manajemen Node", icon: Server, href: "/dashboard/nodes" },
-      { title: "Konsol Database", icon: Terminal, href: "/dashboard/coming-soon/db-console" },
-      { title: "Log Aktivitas", icon: FileText, href: "/dashboard/logs" },
+      { title: "NODES", href: "/dashboard/coming-soon/master-nodes" },
+      { title: "LOG Viewer", href: "/dashboard/coming-soon/master-logs" },
+      { title: "Notification", href: "/dashboard/coming-soon/notifications" },
+      { title: "Remote Install", href: "/dashboard/coming-soon/remote-install" },
+      { title: "Interface", href: "/dashboard/coming-soon/interface" },
+      { title: "AuthWS", href: "/dashboard/coming-soon/authws" },
+      { title: "Demo", href: "/dashboard/coming-soon/demo" },
+      { title: "Host Migration", href: "/dashboard/coming-soon/host-migration" },
     ],
   },
+  {
+    title: "CONSOLIDATION",
+    section: true,
+    items: [
+      { 
+        title: "Settings", 
+        items: [
+          { title: "Settings", href: "/dashboard/coming-soon/consolidation-settings" },
+          { 
+            title: "Agent Settings", 
+            items: [
+              { title: "Download", href: "/dashboard/coming-soon/download" },
+              { title: "External Logging", href: "/dashboard/coming-soon/external-logging" },
+              { title: "SMS Auth", href: "/dashboard/coming-soon/sms-auth" },
+              { title: "SMS Gateway", href: "/dashboard/coming-soon/sms-gateway" },
+            ] 
+          },
+        ] 
+      },
+      { title: "SCHEMA", icon: Database, href: "/dashboard/schema" },
+      { title: "NETWORK", icon: Globe, href: "/dashboard/network" },
+      { title: "JOBS", icon: Activity, href: "/dashboard/jobs" },
+      { title: "NODES", icon: Server, href: "/dashboard/nodes" },
+      { title: "VAULT", icon: Key, href: "/dashboard/credentials" },
+      { title: "DB CONSOLE", icon: Terminal, href: "/dashboard/coming-soon/db-console" },
+      { title: "LOG Viewer", icon: FileText, href: "/dashboard/logs" },
+      { title: "Regex Console", href: "/dashboard/coming-soon/regex-console" },
+      { title: "XML Console", href: "/dashboard/coming-soon/xml-console" },
+      { title: "Regex Job SIM", href: "/dashboard/coming-soon/regex-job-sim" },
+      { title: "CRYPTO TEST", href: "/dashboard/coming-soon/crypto-test" },
+      { title: "Data Sources", href: "/dashboard/coming-soon/data-sources" },
+      { title: "TEXTDB Query", href: "/dashboard/coming-soon/textdb-query" },
+      { title: "Script Console", href: "/dashboard/coming-soon/script-console" },
+    ],
+  },
+  {
+    title: "SECURE ACCESS",
+    section: true,
+    items: [
+      { title: "SA NODES", href: "/dashboard/coming-soon/sa-nodes" },
+      { title: "SA CHANNELS", href: "/dashboard/coming-soon/sa-channels" },
+      { title: "SA VFS", href: "/dashboard/coming-soon/sa-vfs" }
+    ]
+  }
 ];
 
-export function Sidebar() {
+export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState("User");
@@ -84,19 +116,36 @@ export function Sidebar() {
     }
   }, []);
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("auth_token");
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
+    // Always clear local state and redirect even if API call fails
     sessionStorage.removeItem("auth_user");
     router.push("/login");
   };
 
   return (
-    <aside className="fixed left-0 top-0 w-[260px] h-full bg-[#0F2444] flex flex-col z-30 overflow-hidden shadow-2xl">
-      {/* Sidebar Header */}
+    <>
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm transition-opacity"
+          onClick={onClose}
+        />
+      )}
+
+      <aside className={cn(
+        "fixed left-0 top-0 h-full bg-[#0F2444] dark:bg-[#020617] flex flex-col z-50 overflow-hidden shadow-2xl transition-transform duration-300 transform lg:translate-x-0 w-[260px] border-r border-[#1a3a5c] dark:border-border/50",
+        isOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        {/* Sidebar Header */}
       <div className="p-6">
-        <p className="text-[10px] font-bold tracking-[0.2em] text-[#94B8D8] uppercase mb-4 opacity-70">Navigasi Utama</p>
+        <p className="text-[10px] font-bold tracking-[0.2em] text-[#94B8D8] uppercase mb-4 opacity-70">Main Navigation</p>
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-[#1E90FF] rounded-lg flex items-center justify-center text-white shadow-lg shadow-[#1E90FF]/25">
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/25">
              <Activity className="w-5 h-5 stroke-[2.5px]" />
           </div>
           <span className="text-xl font-bold tracking-tight text-white uppercase letter-spacing-[0.05em]">Sync-Go</span>
@@ -111,24 +160,25 @@ export function Sidebar() {
       </nav>
 
       {/* Bottom User Profile */}
-      <div className="p-4 mt-auto border-t border-[#1a3a5c] bg-[#0c1d36]/50">
+      <div className="p-4 mt-auto border-t border-[#1a3a5c] dark:border-border/50 bg-[#0c1d36]/50 dark:bg-muted/10">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-             <div className="w-9 h-9 rounded-full bg-[#1E90FF] flex items-center justify-center text-white font-bold text-sm ring-2 ring-[#0F2444] shadow-inner">{user.charAt(0).toUpperCase()}</div>
+             <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm ring-2 ring-[#0F2444] dark:ring-[#020617] shadow-inner">{user.charAt(0).toUpperCase()}</div>
               <div className="min-w-0">
                 <p className="text-[13px] font-bold text-white tracking-wide truncate">{user}</p>
               </div>
           </div>
           <button 
             onClick={handleLogout}
-            title="Keluar Sesi"
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#1a3a5c] hover:border-red-500/50 hover:bg-red-500/10 text-[#94B8D8] hover:text-red-500 transition-all group"
+            title="Logout Session"
+            className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#1a3a5c] dark:border-border/50 hover:border-red-500/50 hover:bg-red-500/10 text-[#94B8D8] hover:text-red-500 transition-all group"
           >
             <LogOut className="w-4 h-4" />
           </button>
         </div>
       </div>
     </aside>
+    </>
   );
 }
 
@@ -179,15 +229,15 @@ function MenuItem({ item, depth, pathname }: { item: NavItem; depth: number, pat
           "w-full h-[40px] flex items-center justify-between px-3 rounded-lg text-[14px] font-medium transition-all group relative",
           depth === 1 ? "pl-4" : "pl-8",
           isActive 
-            ? "bg-[#1E90FF]/15 text-[#1E90FF]" 
+            ? "bg-primary/15 text-primary" 
             : "hover:bg-white/5 text-white/70 hover:text-white"
         )}
       >
         {isActive && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[24px] bg-[#1E90FF] rounded-r-full" />
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[24px] bg-primary rounded-r-full" />
         )}
         <div className="flex items-center gap-3">
-           {item.icon && <item.icon className={cn("w-4 h-4", isActive ? "text-[#1E90FF]" : "opacity-50 group-hover:opacity-100")} />}
+           {item.icon && <item.icon className={cn("w-4 h-4", isActive ? "text-primary" : "opacity-50 group-hover:opacity-100")} />}
            <span>{item.title}</span>
         </div>
         {hasSubItems && (

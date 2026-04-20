@@ -132,6 +132,8 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool) {
 		// Sync Networks / Topologies - M_SCHEMA_JOBS
 		`CREATE TABLE IF NOT EXISTS M_SCHEMA_JOBS (
 			m_schema_job_id SERIAL PRIMARY KEY,
+			sid VARCHAR(100),
+			name VARCHAR(200),
 			schema_id INT REFERENCES M_SCHEMA(m_schema_id) ON DELETE SET NULL,
 			source_node_id INT REFERENCES M_NODE(m_node_id) ON DELETE SET NULL,
 			target_node_id INT REFERENCES M_NODE(m_node_id) ON DELETE SET NULL,
@@ -228,6 +230,9 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool) {
 		`ALTER TABLE M_SCHEMA_DETAILS ADD COLUMN IF NOT EXISTS sync_method VARCHAR(20) DEFAULT 'INSERT'`,
 		`ALTER TABLE M_SCHEMA_DETAILS ADD COLUMN IF NOT EXISTS upsert_keys VARCHAR(255)`,
 		`ALTER TABLE M_SCHEMA_DETAILS ADD COLUMN IF NOT EXISTS incremental_column VARCHAR(100) DEFAULT 'updated_at'`,
+		
+		`ALTER TABLE M_SCHEMA_JOBS ADD COLUMN IF NOT EXISTS sid VARCHAR(100)`,
+		`ALTER TABLE M_SCHEMA_JOBS ADD COLUMN IF NOT EXISTS name VARCHAR(200)`,
 		
 		// Distributed Agent Columns
 		`ALTER TABLE M_NODE ADD COLUMN IF NOT EXISTS is_distributed BOOLEAN DEFAULT false`,

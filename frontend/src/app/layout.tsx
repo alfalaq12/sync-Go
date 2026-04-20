@@ -34,7 +34,8 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      className={`${headingFont.variable} ${bodyFont.variable} ${monoFont.variable} dark h-full antialiased`}
+      suppressHydrationWarning
+      className={`${headingFont.variable} ${bodyFont.variable} ${monoFont.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground font-body antigravity-scroll-fix">
         <Providers>

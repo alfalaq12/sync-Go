@@ -4,19 +4,23 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, Plus, Copy, Edit, Trash2, Eye, RefreshCw } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { TableSkeleton } from "@/components/remake/Skeleton";
+import { Breadcrumbs } from "@/components/remake/Breadcrumbs";
+import { Pagination } from "@/components/remake/Pagination";
 import { fetchSchemas, deleteSchema } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 
 const MySwal = withReactContent(Swal);
 const swalTheme = { 
-  background: '#FFFFFF', 
-  color: '#0F172A', 
+  background: 'var(--card)', 
+  color: 'var(--foreground)', 
   customClass: { 
-    popup: 'enterprise-card shadow-2xl border border-[#E2E8F0]', 
+    popup: 'enterprise-card shadow-2xl border border-border', 
     confirmButton: 'premium-button premium-button-primary px-6 py-2 ml-4',
-    cancelButton: 'premium-button bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] px-6 py-2'
+    cancelButton: 'premium-button bg-muted text-muted-foreground border border-border px-6 py-2'
   } 
 };
 
@@ -41,8 +45,8 @@ export default function SchemaPage() {
     setTimeout(() => {
       setIsManualRefreshing(false);
       MySwal.fire({
-        title: 'Berhasil',
-        text: 'Daftar schema berhasil diperbarui.',
+        title: 'Success',
+        text: 'Schema list updated successfully.',
         icon: 'success',
         toast: true,
         position: 'top-end',
@@ -58,10 +62,10 @@ export default function SchemaPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["schemas"] });
       setSelectedSchemaId(null);
-      MySwal.fire({ title: 'Terhapus!', text: 'Schema berhasil dihapus.', icon: 'success', ...swalTheme });
+      MySwal.fire({ title: 'Deleted!', text: 'Schema deleted successfully.', icon: 'success', ...swalTheme });
     },
     onError: (err: any) => {
-      MySwal.fire({ title: 'Gagal', text: err?.response?.data?.error || 'Gagal menghapus schema.', icon: 'error', ...swalTheme });
+      MySwal.fire({ title: 'Failed', text: err?.response?.data?.error || 'Failed to delete schema.', icon: 'error', ...swalTheme });
     }
   });
 
@@ -72,12 +76,12 @@ export default function SchemaPage() {
   const handleDelete = () => {
     if (!selectedSchema) return;
     MySwal.fire({
-      title: 'Hapus Schema?',
-      text: `Apakah Anda yakin ingin menghapus schema "${selectedSchema.name}"? Ini akan berdampak pada Job ETL yang menggunakannya.`,
+      title: 'Delete Schema?',
+      text: `Are you sure you want to delete the schema "${selectedSchema.name}"? This will impact ETL Jobs using it.`,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: 'Ya, Hapus',
-      cancelButtonText: 'Batal',
+      confirmButtonText: 'Yes, Delete',
+      cancelButtonText: 'Cancel',
       ...swalTheme,
       customClass: { 
         ...swalTheme.customClass, 
@@ -95,103 +99,109 @@ export default function SchemaPage() {
 
   return (
     <div className="p-8 max-w-[1200px] mx-auto animate-in fade-in duration-500">
+      <Breadcrumbs />
       
       <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 mb-1">
-             <div className="p-1.5 rounded-lg bg-[#1E90FF]/10 text-[#1E90FF]">
+             <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
                 <Copy className="w-5 h-5" />
              </div>
-             <h1 className="text-3xl font-semibold tracking-tight text-[#0F172A]">Struktur Schema & Aturan</h1>
+              <h1 className="text-3xl font-semibold tracking-tight text-foreground">Schema Structure & Rules</h1>
           </div>
-          <p className="text-[14px] font-medium text-[#64748B]">Mapping kolom dan query untuk pengambilan/pengiriman data antar endpoint.</p>
+          <p className="text-[14px] font-medium text-muted-foreground">Column and query mapping for data extraction/loading between endpoints.</p>
         </div>
         <div className="flex items-center gap-3">
           <button 
             onClick={handleRefresh} 
-            className="h-10 px-4 rounded-lg bg-white border border-[#E2E8F0] hover:bg-[#F8FAFC] text-[13px] font-semibold text-[#64748B] transition-all flex items-center gap-2 active:scale-95"
+            className="h-10 px-4 rounded-lg bg-card border border-border hover:bg-muted text-[13px] font-semibold text-muted-foreground transition-all flex items-center gap-2 active:scale-95"
           >
             <RefreshCw className={`w-4 h-4 ${(isFetching || isManualRefreshing) ? 'animate-spin' : ''}`} /> Refresh
           </button>
           <button 
             onClick={() => router.push('/dashboard/schema/new')} 
-            className="h-10 px-5 rounded-lg bg-[#1E90FF] hover:bg-[#1c86ee] text-[13px] font-bold text-white shadow-lg shadow-[#1E90FF]/2 transition-all flex items-center gap-2 active:scale-[0.98]"
+            className="h-10 px-5 rounded-lg bg-primary hover:bg-primary/90 text-[13px] font-bold text-primary-foreground shadow-lg shadow-primary/2 transition-all flex items-center gap-2 active:scale-[0.98]"
           >
-            <Plus className="w-4.5 h-4.5" /> Buat Schema Baru
+            <Plus className="w-4.5 h-4.5" /> Create New Schema
           </button>
         </div>
       </div>
 
-      <div className="enterprise-card flex flex-col bg-white border border-[#E2E8F0] overflow-hidden">
+      <div className="enterprise-card flex flex-col overflow-hidden">
         {/* Toolbar */}
-        <div className="p-5 border-b border-[#E2E8F0] flex items-center justify-between bg-[#F8FAFC]/50">
+        <div className="p-5 border-b border-border flex items-center justify-between bg-muted/20">
           <div className="relative w-full max-w-sm">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94A3B8]" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
             <input 
               type="text" 
-              placeholder="Cari struktur schema..." 
+              placeholder="Search schema structure..." 
               value={searchTerm} 
               onChange={(e) => setSearchTerm(e.target.value)} 
-              className="w-full h-11 pl-11 pr-4 rounded-lg border border-[#E2E8F0] bg-white text-[13px] font-medium text-[#0F172A] focus:outline-none focus:border-[#1E90FF] focus:ring-4 focus:ring-[#1E90FF]/5 transition-all outline-none" 
+              className="w-full h-11 pl-11 pr-4 rounded-lg border border-border bg-card text-[13px] font-medium text-foreground focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none" 
             />
           </div>
-          <div className="text-[11px] font-bold text-[#94A3B8] uppercase tracking-widest">
-            Total Schema: {total}
+          <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
+            Total Schemas: {total}
           </div>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead>
-              <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+              <tr className="bg-muted/30 border-b border-border">
                 <th className="px-6 py-4 w-10"></th>
-                <th className="px-6 py-4 font-bold text-[#64748B] text-[11px] uppercase tracking-wider">ID</th>
-                <th className="px-6 py-4 font-bold text-[#64748B] text-[11px] uppercase tracking-wider">Nama Schema</th>
-                <th className="px-6 py-4 font-bold text-[#64748B] text-[11px] uppercase tracking-wider">Pemilik</th>
-                <th className="px-6 py-4 font-bold text-[#64748B] text-[11px] uppercase tracking-wider">Konfigurasi</th>
-                <th className="px-6 py-4 font-bold text-[#64748B] text-[11px] uppercase tracking-wider text-right">Update Terakhir</th>
+                <th className="px-6 py-4 font-bold text-muted-foreground text-[11px] uppercase tracking-wider">ID</th>
+                <th className="px-6 py-4 font-bold text-muted-foreground text-[11px] uppercase tracking-wider">Schema Name</th>
+                <th className="px-6 py-4 font-bold text-muted-foreground text-[11px] uppercase tracking-wider">Owner</th>
+                <th className="px-6 py-4 font-bold text-muted-foreground text-[11px] uppercase tracking-wider">Configuration</th>
+                <th className="px-6 py-4 font-bold text-muted-foreground text-[11px] uppercase tracking-wider text-right">Last Updated</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E2E8F0]">
+            <tbody className="divide-y divide-border">
               {isLoading && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-[#64748B]">
-                    <RefreshCw className="w-6 h-6 mx-auto animate-spin mb-3 text-[#1E90FF]" />
-                    <p className="font-medium">Memuat data schema...</p>
+                  <td colSpan={6} className="px-0 py-0 text-center">
+                    <TableSkeleton rows={6} cols={6} />
                   </td>
                 </tr>
               )}
               {!isLoading && filteredSchemas.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-[#94A3B8]">
-                    <p className="font-medium italic">Belum ada schema yang terdaftar di sistem.</p>
+                  <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
+                    <p className="font-medium italic">No schema registered in the system yet.</p>
                   </td>
                 </tr>
               )}
               {filteredSchemas.map((schema: any) => {
                 const isSelected = selectedSchemaId === schema.id;
                 return (
-                  <tr 
+                  <tr
                     key={schema.id} 
                     onClick={() => setSelectedSchemaId(isSelected ? null : schema.id)}
-                    className={`hover:bg-[#F8FAFC] transition-all cursor-pointer group ${isSelected ? 'bg-[#F0F7FF] hover:bg-[#F0F7FF]' : ''}`}
+                    className={cn(
+                      "transition-all cursor-pointer group",
+                      isSelected ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/50"
+                    )}
                   >
                     <td className="px-6 py-4.5 text-center">
                       <div className="flex items-center justify-center">
-                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${isSelected ? 'border-[#1E90FF] bg-[#1E90FF]' : 'border-[#CBD5E1] bg-white group-hover:border-[#94A3B8]'}`}>
-                          {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
+                        <div className={cn(
+                          "w-4 h-4 rounded-full border flex items-center justify-center transition-all",
+                          isSelected ? "border-primary bg-primary" : "border-border bg-card group-hover:border-muted-foreground"
+                        )}>
+                          {isSelected && <div className="w-1.5 h-1.5 bg-primary-foreground rounded-full" />}
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4.5 font-bold font-mono text-[12px] text-[#0F172A]">{schema.id}</td>
-                    <td className="px-6 py-4.5 font-bold text-[#1E90FF]">{schema.name}</td>
-                    <td className="px-6 py-4.5 font-bold text-[#64748B] text-[12px] uppercase tracking-tight">{schema.owner || "SYSTEM"}</td>
+                    <td className="px-6 py-4.5 font-bold font-mono text-[12px] text-foreground">{schema.id}</td>
+                    <td className="px-6 py-4.5 font-bold text-primary">{schema.name}</td>
+                    <td className="px-6 py-4.5 font-bold text-muted-foreground text-[12px] uppercase tracking-tight">{schema.owner || "SYSTEM"}</td>
                     <td className="px-6 py-4.5">
-                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-[#F1F5F9] border border-[#E2E8F0] text-[10px] font-bold text-[#0F172A]">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-muted border border-border text-[10px] font-bold text-foreground">
                         {schema.queries_count || 0} QUERIES
                       </div>
                     </td>
-                    <td className="px-6 py-4.5 text-[12px] font-medium text-[#94A3B8] text-right">
+                    <td className="px-6 py-4.5 text-[12px] font-medium text-muted-foreground/70 text-right">
                       {schema.updated_at ? format(new Date(schema.updated_at), 'dd/MM/yyyy HH:mm:ss') : "—"}
                     </td>
                   </tr>
@@ -202,36 +212,45 @@ export default function SchemaPage() {
         </div>
 
         {/* Action Bar */}
-        <div className="p-5 border-t border-[#E2E8F0] flex flex-wrap items-center justify-between bg-[#F8FAFC]/30">
+        <div className="p-5 border-t border-border flex flex-wrap items-center justify-between bg-muted/10">
           <div className="flex items-center gap-3">
              <button 
                 onClick={() => router.push(`/dashboard/schema/${selectedSchemaId}?mode=view`)}
                 disabled={!selectedSchemaId} 
-                className="h-10 px-5 rounded-lg border border-[#E2E8F0] bg-white text-[12px] font-bold text-[#64748B] hover:text-[#1E90FF] hover:border-[#1E90FF]/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 active:scale-95"
+                className="h-10 px-5 rounded-lg border border-border bg-card text-[12px] font-bold text-muted-foreground hover:text-primary hover:border-primary/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 active:scale-95"
              >
-               <Eye className="w-4 h-4" /> Lihat Detail
+               <Eye className="w-4 h-4" /> View Details
              </button>
              <button 
                 onClick={() => router.push(`/dashboard/schema/${selectedSchemaId}`)}
                 disabled={!selectedSchemaId} 
-                className="h-10 px-5 rounded-lg border border-[#E2E8F0] bg-white text-[12px] font-bold text-[#64748B] hover:text-[#1E90FF] hover:border-[#1E90FF]/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 active:scale-95"
+                className="h-10 px-5 rounded-lg border border-border bg-card text-[12px] font-bold text-muted-foreground hover:text-primary hover:border-primary/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 active:scale-95"
              >
                <Edit className="w-4 h-4" /> Edit Schema
              </button>
-             <div className="w-px h-6 bg-[#E2E8F0] mx-1" />
+             <div className="w-px h-6 bg-border mx-1" />
              <button 
                 onClick={handleDelete}
                 disabled={!selectedSchemaId} 
-                className="h-10 px-5 rounded-lg border border-[#E2E8F0] bg-white text-[12px] font-bold text-[#64748B] hover:text-red-500 hover:border-red-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 active:scale-95"
+                className="h-10 px-5 rounded-lg border border-border bg-card text-[12px] font-bold text-muted-foreground hover:text-red-500 hover:border-red-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 active:scale-95"
              >
-               <Trash2 className="w-4 h-4" /> Hapus Schema
+               <Trash2 className="w-4 h-4" /> Delete Schema
              </button>
           </div>
           
-          <div className="text-[11px] font-bold text-[#94A3B8] uppercase tracking-widest">
-            {selectedSchemaId ? `Schema Terpilih: ${selectedSchema?.name}` : 'Pilih struktur schema untuk modifikasi'}
+          <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
+            {selectedSchemaId ? `Selected Schema: ${selectedSchema?.name}` : 'Select a schema structure to modify'}
           </div>
         </div>
+
+        {/* Pagination */}
+        <Pagination 
+          currentPage={1}
+          totalPages={Math.ceil(total / 10) || 1}
+          onPageChange={() => {}}
+          totalItems={total}
+          pageSize={10}
+        />
       </div>
     </div>
   );

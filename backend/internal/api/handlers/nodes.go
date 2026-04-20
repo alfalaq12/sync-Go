@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -32,7 +33,7 @@ type NodeResponse struct {
 	AgentVersion   *string `json:"agent_version"`
 	Owner          *string `json:"owner"`
 	IsDistributed  *bool   `json:"is_distributed"`
-	AgentToken     *string `json:"agent_token"`
+	AgentToken     *string `json:"agent_token,omitempty"`
 	BatchSize      *int    `json:"batch_size"`
 	LastSeen       *string `json:"last_seen"`
 	CreatedAt      *string `json:"created_at"`
@@ -55,8 +56,8 @@ func (h *NodeHandler) ListNodes(c *gin.Context) {
 		FROM M_NODE ORDER BY m_node_id ASC
 	`)
 	if err != nil {
-		fmt.Printf("Error in ListNodes Query: %v\n", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Error in ListNodes Query: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch nodes from database"})
 		return
 	}
 	defer rows.Close()
@@ -68,8 +69,8 @@ func (h *NodeHandler) ListNodes(c *gin.Context) {
 			&n.Status, &n.Notes, &n.BandwidthLimit, &n.EnableTimeSync, &n.OfflineMode,
 			&n.ClonedNode, &n.AgentVersion, &n.Owner, &n.IsDistributed, &n.AgentToken,
 			&n.BatchSize, &n.LastSeen, &n.CreatedAt, &n.UpdatedAt); err != nil {
-			fmt.Printf("Error in ListNodes Scan: %v\n", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			log.Printf("Error in ListNodes Scan: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process node records"})
 			return
 		}
 		nodes = append(nodes, n)
@@ -107,7 +108,7 @@ func (h *NodeHandler) CreateNode(c *gin.Context) {
 
 	var req CreateNodeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
 		return
 	}
 
@@ -149,7 +150,8 @@ func (h *NodeHandler) CreateNode(c *gin.Context) {
 		req.IsDistributed, req.AgentToken, req.BatchSize).Scan(&nodeID)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to create node: %v", err)})
+		log.Printf("Failed to create node: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save node topology"})
 		return
 	}
 
@@ -202,7 +204,7 @@ func (h *NodeHandler) UpdateNode(c *gin.Context) {
 	id := c.Param("id")
 	var req CreateNodeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
 		return
 	}
 
@@ -228,7 +230,8 @@ func (h *NodeHandler) UpdateNode(c *gin.Context) {
 		req.BandwidthLimit, enableTimeSync, offlineMode, clonedNode, req.Owner, 
 		req.IsDistributed, req.AgentToken, req.BatchSize, id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Failed to update node %s: %v", id, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal update error"})
 		return
 	}
 
@@ -249,7 +252,8 @@ func (h *NodeHandler) DeleteNode(c *gin.Context) {
 	id := c.Param("id")
 	tag, err := h.db.Exec(c.Request.Context(), "DELETE FROM M_NODE WHERE m_node_id=$1", id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Failed to delete node %s: %v", id, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete node"})
 		return
 	}
 

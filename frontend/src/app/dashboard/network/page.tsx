@@ -5,17 +5,20 @@ import { useRouter } from "next/navigation";
 import { Search, Plus, Edit, Trash2, Network as NetworkIcon, RefreshCw, Eye, PlayCircle, Activity } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchNetworks, deleteNetwork, testSourceConnection, testTargetConnection } from "@/lib/api";
+import { cn } from "@/lib/utils";
+import { Breadcrumbs } from "@/components/remake/Breadcrumbs";
+import { Pagination } from "@/components/remake/Pagination";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 
 const MySwal = withReactContent(Swal);
 const swalTheme = { 
-  background: '#FFFFFF', 
-  color: '#0F172A', 
+  background: 'var(--card)', 
+  color: 'var(--foreground)', 
   customClass: { 
-    popup: 'enterprise-card shadow-2xl border border-[#E2E8F0]', 
+    popup: 'enterprise-card shadow-2xl border border-border', 
     confirmButton: 'premium-button premium-button-primary px-6 py-2 ml-4',
-    cancelButton: 'premium-button bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] px-6 py-2'
+    cancelButton: 'premium-button bg-muted text-muted-foreground border border-border px-6 py-2'
   } 
 };
 
@@ -39,8 +42,8 @@ export default function NetworkPage() {
     setTimeout(() => {
       setIsManualRefreshing(false);
       MySwal.fire({
-        title: 'Berhasil',
-        text: 'Daftar jaringan berhasil diperbarui.',
+        title: 'Success',
+        text: 'Network list updated successfully.',
         icon: 'success',
         toast: true,
         position: 'top-end',
@@ -56,10 +59,10 @@ export default function NetworkPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["networks"] });
       setSelectedNetworkId(null);
-      MySwal.fire({ title: 'Terhapus!', text: 'Jalur koneksi berhasil dihapus.', icon: 'success', ...swalTheme });
+      MySwal.fire({ title: 'Deleted!', text: 'Connection path deleted successfully.', icon: 'success', ...swalTheme });
     },
     onError: (err: any) => {
-      MySwal.fire({ title: 'Gagal', text: err?.response?.data?.error || 'Gagal menghapus data.', icon: 'error', ...swalTheme });
+      MySwal.fire({ title: 'Failed', text: err?.response?.data?.error || 'Failed to delete data.', icon: 'error', ...swalTheme });
     }
   });
 
@@ -70,12 +73,12 @@ export default function NetworkPage() {
   const handleDelete = () => {
     if (!selectedNetwork) return;
     MySwal.fire({
-      title: 'Hapus Jalur Data?',
-      text: 'Apakah Anda yakin ingin menghapus jalur network ini? Aksi ini mungkin memutus proses sinkronisasi yang terhubung.',
+      title: 'Delete Data Path?',
+      text: 'Are you sure you want to delete this network path? This action may interrupt connected synchronization processes.',
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: 'Ya, Hapus',
-      cancelButtonText: 'Batal',
+      confirmButtonText: 'Yes, Delete',
+      cancelButtonText: 'Cancel',
       ...swalTheme,
       customClass: { 
         ...swalTheme.customClass, 
@@ -90,8 +93,8 @@ export default function NetworkPage() {
     if (!selectedNetwork) return;
     const net = selectedNetwork;
     MySwal.fire({
-      title: 'Menguji Konektivitas...',
-      html: `Melakukan tes ping untuk <b>${net.id}</b>...`,
+      title: 'Testing Connectivity...',
+      html: `Performing ping test for <b>${net.id}</b>...`,
       allowOutsideClick: false,
       didOpen: () => {
         MySwal.showLoading();
@@ -104,18 +107,18 @@ export default function NetworkPage() {
       const targetRes = await testTargetConnection(net.id);
 
       MySwal.fire({
-        title: 'Status Koneksi',
+        title: 'Connection Status',
         html: `
           <div class="text-left space-y-3">
-            <div class="p-3 rounded-lg border ${sourceRes.success ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100'}">
-              <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Koneksi Asal (Source)</p>
+            <div class="p-3 rounded-lg border ${sourceRes.success ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-red-500/10 border-red-500/20'}">
+              <p class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Source Connection</p>
               <div class="flex items-center justify-between">
                 <span class="text-sm font-semibold">${sourceRes.message}</span>
                 <span class="text-[10px] font-mono">${sourceRes.latency || ''}</span>
               </div>
             </div>
-            <div class="p-3 rounded-lg border ${targetRes.success ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100'}">
-              <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Koneksi Tujuan (Target)</p>
+            <div class="p-3 rounded-lg border ${targetRes.success ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-red-500/10 border-red-500/20'}">
+              <p class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Target Connection</p>
               <div class="flex items-center justify-between">
                 <span class="text-sm font-semibold">${targetRes.message}</span>
                 <span class="text-[10px] font-mono">${targetRes.latency || ''}</span>
@@ -128,8 +131,8 @@ export default function NetworkPage() {
       });
     } catch (err: any) {
       MySwal.fire({
-        title: 'Diagnostik Gagal',
-        text: 'Sistem tidak dapat melakukan tes diagnostik pada jalur ini.',
+        title: 'Diagnostics Failed',
+        text: 'The system could not perform diagnostic tests on this path.',
         icon: 'error',
         ...swalTheme
       });
@@ -137,6 +140,8 @@ export default function NetworkPage() {
   };
 
   const filteredNetworks = networks.filter((net: any) =>
+    (net.sid && net.sid.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (net.name && net.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (net.source_node && net.source_node.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (net.target_node && net.target_node.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (net.id && net.id.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -144,74 +149,77 @@ export default function NetworkPage() {
 
   return (
     <div className="p-8 max-w-[1600px] mx-auto animate-in fade-in duration-500">
+      <Breadcrumbs />
+      
       <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 mb-1">
-             <div className="p-1.5 rounded-lg bg-[#1E90FF]/10 text-[#1E90FF]">
+             <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
                 <NetworkIcon className="w-6 h-6" />
              </div>
-             <h1 className="text-3xl font-semibold tracking-tight text-[#0F172A]">Topologi & Koneksi</h1>
+             <h1 className="text-3xl font-semibold tracking-tight text-foreground">Topology & Connections</h1>
           </div>
-          <p className="text-[14px] font-medium text-[#64748B]">Konfigurasi alur data dari resource asal (source) ke tujuan (target) via pipeline.</p>
+          <p className="text-[14px] font-medium text-muted-foreground">Configure data flow from source resources to target destinations via pipeline.</p>
         </div>
         <div className="flex items-center gap-3">
           <button 
             onClick={handleRefresh} 
-            className="h-10 px-4 rounded-lg bg-white border border-[#E2E8F0] hover:bg-[#F8FAFC] text-[13px] font-semibold text-[#64748B] transition-all flex items-center gap-2 active:scale-95"
+            className="h-10 px-4 rounded-lg bg-card border border-border hover:bg-muted text-[13px] font-semibold text-muted-foreground transition-all flex items-center gap-2 active:scale-95"
           >
             <RefreshCw className={`w-4 h-4 ${(isFetching || isManualRefreshing) ? 'animate-spin' : ''}`} /> Refresh
           </button>
           <button 
             onClick={() => router.push('/dashboard/network/new')} 
-            className="h-10 px-5 rounded-lg bg-[#1E90FF] hover:bg-[#1c86ee] text-[13px] font-bold text-white shadow-lg shadow-[#1E90FF]/2 transition-all flex items-center gap-2 active:scale-[0.98]"
+            className="h-10 px-5 rounded-lg bg-primary hover:bg-primary/90 text-[13px] font-bold text-primary-foreground shadow-lg shadow-primary/2 transition-all flex items-center gap-2 active:scale-[0.98]"
           >
-            <Plus className="w-4.5 h-4.5" /> Tambah Jalur Data
+            <Plus className="w-4.5 h-4.5" /> Add Data Path
           </button>
         </div>
       </div>
 
-      <div className="enterprise-card flex flex-col bg-white border border-[#E2E8F0] overflow-hidden">
+      <div className="enterprise-card flex flex-col overflow-hidden">
         {/* Toolbar */}
-        <div className="p-5 border-b border-[#E2E8F0] flex items-center justify-between bg-[#F8FAFC]/50">
+        <div className="p-5 border-b border-border flex items-center justify-between bg-muted/20">
           <div className="relative w-full max-w-sm">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94A3B8]" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
             <input 
               type="text" 
-              placeholder="Cari jalur network..." 
+              placeholder="Search network paths..." 
               value={searchTerm} 
               onChange={(e) => setSearchTerm(e.target.value)} 
-              className="w-full h-11 pl-11 pr-4 rounded-lg border border-[#E2E8F0] bg-white text-[13px] font-medium text-[#0F172A] focus:outline-none focus:border-[#1E90FF] focus:ring-4 focus:ring-[#1E90FF]/5 transition-all outline-none" 
+              className="w-full h-11 pl-11 pr-4 rounded-lg border border-border bg-card text-[13px] font-medium text-foreground focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none" 
             />
           </div>
-          <div className="text-[11px] font-bold text-[#94A3B8] uppercase tracking-widest">
-            Total Jalur Terdaftar: {total}
+          <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
+            Total Registered Paths: {total}
           </div>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead>
-              <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+              <tr className="bg-muted/30 border-b border-border">
                 <th className="px-6 py-4 w-10"></th>
-                <th className="px-6 py-4 font-bold text-[#64748B] text-[11px] uppercase tracking-wider">ID</th>
-                <th className="px-6 py-4 font-bold text-[#64748B] text-[11px] uppercase tracking-wider">Konfigurasi Asal (Source)</th>
-                <th className="px-6 py-4 font-bold text-[#64748B] text-[11px] uppercase tracking-wider">Destinasi Tujuan (Target)</th>
-                <th className="px-6 py-4 font-bold text-[#64748B] text-[11px] uppercase tracking-wider">Status Jalur</th>
+                <th className="px-6 py-4 font-bold text-muted-foreground text-[11px] uppercase tracking-wider">ID</th>
+                <th className="px-6 py-4 font-bold text-muted-foreground text-[11px] uppercase tracking-wider">Name (SID)</th>
+                <th className="px-6 py-4 font-bold text-muted-foreground text-[11px] uppercase tracking-wider text-center">Source Config</th>
+                <th className="px-6 py-4 font-bold text-muted-foreground text-[11px] uppercase tracking-wider text-center">Target Config</th>
+                <th className="px-6 py-4 font-bold text-muted-foreground text-[11px] uppercase tracking-wider">Path Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E2E8F0]">
+            <tbody className="divide-y divide-border">
               {isLoading && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-[#64748B]">
-                    <RefreshCw className="w-6 h-6 mx-auto animate-spin mb-3 text-[#1E90FF]" />
-                    <p className="font-medium">Memuat data topologi koneksi...</p>
+                  <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
+                    <RefreshCw className="w-6 h-6 mx-auto animate-spin mb-3 text-primary" />
+                    <p className="font-medium">Loading topology connections data...</p>
                   </td>
                 </tr>
               )}
               {!isLoading && filteredNetworks.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-[#94A3B8]">
-                    <p className="font-medium italic">Belum ada jalur jaringan yang terdaftar di sistem.</p>
+                  <td colSpan={6} className="px-6 py-12 text-center text-[#94A3B8]">
+                    <p className="font-medium italic">No network paths registered in the system yet.</p>
                   </td>
                 </tr>
               )}
@@ -221,30 +229,42 @@ export default function NetworkPage() {
                   <tr 
                     key={net.id} 
                     onClick={() => setSelectedNetworkId(isSelected ? null : net.id)}
-                    className={`hover:bg-[#F8FAFC] transition-all cursor-pointer group ${isSelected ? 'bg-[#F0F7FF] hover:bg-[#F0F7FF]' : ''}`}
+                    className={cn(
+                      "transition-all cursor-pointer group",
+                      isSelected ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/50"
+                    )}
                   >
                     <td className="px-6 py-4.5 text-center">
                       <div className="flex items-center justify-center">
-                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${isSelected ? 'border-[#1E90FF] bg-[#1E90FF]' : 'border-[#CBD5E1] bg-white group-hover:border-[#94A3B8]'}`}>
-                          {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
+                        <div className={cn(
+                          "w-4 h-4 rounded-full border flex items-center justify-center transition-all",
+                          isSelected ? "border-primary bg-primary" : "border-border bg-card group-hover:border-muted-foreground"
+                        )}>
+                          {isSelected && <div className="w-1.5 h-1.5 bg-primary-foreground rounded-full" />}
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4.5 font-bold font-mono text-[12px] text-[#0F172A]">{net.id}</td>
+                    <td className="px-6 py-4.5 font-bold font-mono text-[12px] text-muted-foreground/60">{net.id}</td>
                     <td className="px-6 py-4.5">
                       <div className="flex flex-col">
-                         <span className="text-[14px] font-bold text-[#0F172A]">{net.source_node || "MASTER_DEFAULT"}</span>
-                         <span className="text-[11px] font-bold text-[#1E90FF] uppercase tracking-wider">{net.source_driver || "POSTGRES"}</span>
+                         <span className="text-[14px] font-bold text-foreground">{net.name || "Default Pipeline"}</span>
+                         <span className="text-[10px] font-mono font-bold text-primary uppercase tracking-wider">{net.sid || "NSID-UNSET"}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4.5 text-center">
+                      <div className="flex flex-col items-center">
+                         <span className="text-[14px] font-bold text-foreground">{net.source_node || "MASTER_DEFAULT"}</span>
+                         <span className="text-[11px] font-bold text-primary uppercase tracking-wider">{net.source_driver || "POSTGRES"}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4.5 text-center">
+                      <div className="flex flex-col items-center">
+                         <span className="text-[14px] font-bold text-foreground">{net.target_node || "LOCAL_AGENT"}</span>
+                         <span className="text-[11px] font-bold text-secondary uppercase tracking-wider">{net.target_driver || "MYSQL"}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4.5">
-                      <div className="flex flex-col">
-                         <span className="text-[14px] font-bold text-[#0F172A]">{net.target_node || "LOCAL_AGENT"}</span>
-                         <span className="text-[11px] font-bold text-[#00C6AD] uppercase tracking-wider">{net.target_driver || "MYSQL"}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4.5">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-sm shadow-emerald-500/5 uppercase">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shadow-sm uppercase">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                         {(net.status || 'active').toUpperCase()}
                       </span>
@@ -257,43 +277,59 @@ export default function NetworkPage() {
         </div>
 
         {/* Action Bar */}
-        <div className="p-5 border-t border-[#E2E8F0] flex flex-wrap items-center justify-between bg-[#F8FAFC]/30">
-          <div className="flex items-center gap-3">
+        <div className="p-5 border-t border-border flex flex-wrap items-center justify-between bg-muted/10">
+           <div className="flex items-center gap-3">
              <button 
                 onClick={handleQuickTest}
                 disabled={!selectedNetworkId} 
-                className="h-10 px-5 rounded-lg border border-[#E2E8F0] bg-white text-[12px] font-bold text-[#64748B] hover:text-emerald-500 hover:border-emerald-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 active:scale-95"
+                className="h-10 px-5 rounded-lg border border-border bg-card text-[12px] font-bold text-muted-foreground hover:text-emerald-500 hover:border-emerald-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 active:scale-95"
              >
-               <Activity className="w-4 h-4" /> Tes Jaringan
+               <Activity className="w-4 h-4" /> Test Network
              </button>
              <button 
                 onClick={() => router.push(`/dashboard/network/${selectedNetworkId}?mode=view`)}
                 disabled={!selectedNetworkId} 
-                className="h-10 px-5 rounded-lg border border-[#E2E8F0] bg-white text-[12px] font-bold text-[#64748B] hover:text-[#1E90FF] hover:border-[#1E90FF]/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 active:scale-95"
+                className="h-10 px-5 rounded-lg border border-border bg-card text-[12px] font-bold text-muted-foreground hover:text-primary hover:border-primary/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 active:scale-95"
              >
-               <Eye className="w-4 h-4" /> Lihat Detail
+               <Eye className="w-4 h-4" /> View Details
              </button>
              <button 
                 onClick={() => router.push(`/dashboard/network/${selectedNetworkId}`)}
                 disabled={!selectedNetworkId} 
-                className="h-10 px-5 rounded-lg border border-[#E2E8F0] bg-white text-[12px] font-bold text-[#64748B] hover:text-[#1E90FF] hover:border-[#1E90FF]/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 active:scale-95"
+                className="h-10 px-5 rounded-lg border border-border bg-card text-[12px] font-bold text-muted-foreground hover:text-primary hover:border-primary/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 active:scale-95"
              >
-               <Edit className="w-4 h-4" /> Edit Konfigurasi
+               <Edit className="w-4 h-4" /> Edit Config
              </button>
-             <div className="w-px h-6 bg-[#E2E8F0] mx-1" />
+             <button 
+                onClick={() => router.push(`/dashboard/network/new?clone=${selectedNetworkId}`)}
+                disabled={!selectedNetworkId} 
+                className="h-10 px-5 rounded-lg border border-border bg-card text-[12px] font-bold text-muted-foreground hover:text-amber-500 hover:border-amber-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 active:scale-95"
+              >
+                <PlayCircle className="w-4 h-4 rotate-90" /> Duplicate
+              </button>
+             <div className="w-px h-6 bg-border mx-1" />
              <button 
                 onClick={handleDelete}
                 disabled={!selectedNetworkId} 
-                className="h-10 px-5 rounded-lg border border-[#E2E8F0] bg-white text-[12px] font-bold text-[#64748B] hover:text-red-500 hover:border-red-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 active:scale-95"
+                className="h-10 px-5 rounded-lg border border-border bg-card text-[12px] font-bold text-muted-foreground hover:text-red-500 hover:border-red-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 active:scale-95"
              >
-               <Trash2 className="w-4 h-4" /> Hapus Jalur Data
+               <Trash2 className="w-4 h-4" /> Delete Path
              </button>
           </div>
           
-          <div className="text-[11px] font-bold text-[#94A3B8] uppercase tracking-widest hidden lg:block">
-            {selectedNetworkId ? `Jalur Terpilih: ${selectedNetworkId}` : 'Pilih jalur koneksi untuk melihat status detail'}
+          <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest hidden lg:block">
+            {selectedNetworkId ? `Selected Path: ${selectedNetworkId}` : 'Select a connection path to view detailed status'}
           </div>
         </div>
+
+        {/* Pagination */}
+        <Pagination 
+          currentPage={1}
+          totalPages={Math.ceil(total / 10) || 1}
+          onPageChange={() => {}}
+          totalItems={total}
+          pageSize={10}
+        />
       </div>
     </div>
   );

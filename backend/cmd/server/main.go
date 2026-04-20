@@ -4,6 +4,8 @@ import (
 	"context"
 	"log"
 
+	"os"
+	"github.com/gin-gonic/gin"
 	"github.com/bintang/remake-dsp-backend/internal/api/router"
 	"github.com/bintang/remake-dsp-backend/internal/config"
 	"github.com/bintang/remake-dsp-backend/internal/db"
@@ -12,6 +14,11 @@ import (
 )
 
 func main() {
+	// SECURITY: Set Gin to release mode in production to hide debug info
+	if os.Getenv("GIN_MODE") == "" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	cfg := config.LoadConfig()
 
 	ctx := context.Background()

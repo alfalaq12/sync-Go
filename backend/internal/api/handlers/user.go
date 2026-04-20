@@ -83,11 +83,15 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
-	hash, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-	_, err := h.db.Exec(c.Request.Context(),
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process password"})
+		return
+	}
+	_, dbErr := h.db.Exec(c.Request.Context(),
 		"INSERT INTO S_USERS (username, password_hash, role, branch, email) VALUES ($1, $2, $3, $4, $5)",
 		req.Username, string(hash), req.Role, req.Branch, req.Email)
-	if err != nil {
+	if dbErr != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 		return
 	}
@@ -109,11 +113,15 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	}
 
 	if req.Password != "" {
-		hash, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-		_, err := h.db.Exec(c.Request.Context(),
+		hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process password"})
+			return
+		}
+		_, dbErr := h.db.Exec(c.Request.Context(),
 			"UPDATE S_USERS SET username = $1, role = $2, password_hash = $3, branch = $4, email = $5 WHERE username = $6",
 			req.Username, req.Role, string(hash), req.Branch, req.Email, id)
-		if err != nil {
+		if dbErr != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user with password"})
 			return
 		}

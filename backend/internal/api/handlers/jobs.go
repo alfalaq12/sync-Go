@@ -22,25 +22,26 @@ func NewJobHandler(db *pgxpool.Pool, engine *syncengine.Engine) *JobHandler {
 }
 
 type JobResponse struct {
-	ID               int     `json:"id"`
-	STJobID          *string `json:"st_job_id"`
-	Name             string  `json:"name"`
-	NetworkID        *int    `json:"network_id"`
-	SchemaID         *int    `json:"schema_id"`
-	SourceNodeID     *int    `json:"source_node_id"`
-	TargetNodeID     *int    `json:"target_node_id"`
-	JobType          *string `json:"job_type"`
-	Status           *string `json:"status"`
-	Progress         *int    `json:"progress"`
-	RecordsProcessed *int64  `json:"records_processed"`
-	RecordsTotal     *int64  `json:"records_total"`
-	RowsExtracted    *int64  `json:"rows_extracted"`
-	RowsUploaded     *int64  `json:"rows_uploaded"`
-	ErrorMessage     *string `json:"error_message"`
-	StartedAt        *string `json:"started_at"`
-	CompletedAt      *string `json:"completed_at"`
-	CreatedAt        *string `json:"created_at"`
-	UpdatedAt        *string `json:"updated_at"`
+	ID               int      `json:"id"`
+	STJobID          *string  `json:"st_job_id"`
+	Name             string   `json:"name"`
+	NetworkID        *int     `json:"network_id"`
+	SchemaID         *int     `json:"schema_id"`
+	SourceNodeID     *int     `json:"source_node_id"`
+	TargetNodeID     *int     `json:"target_node_id"`
+	JobType          *string  `json:"job_type"`
+	Status           *string  `json:"status"`
+	Progress         *int     `json:"progress"`
+	RecordsProcessed *int64   `json:"records_processed"`
+	RecordsTotal     *int64   `json:"records_total"`
+	RowsExtracted    *int64   `json:"rows_extracted"`
+	RowsUploaded     *int64   `json:"rows_uploaded"`
+	ErrorMessage     *string  `json:"error_message"`
+	DurationSeconds  *float64 `json:"duration_seconds"`
+	StartedAt        *string  `json:"started_at"`
+	CompletedAt      *string  `json:"completed_at"`
+	CreatedAt        *string  `json:"created_at"`
+	UpdatedAt        *string  `json:"updated_at"`
 }
 
 func (h *JobHandler) ListJobs(c *gin.Context) {
@@ -52,6 +53,11 @@ func (h *JobHandler) ListJobs(c *gin.Context) {
 	rows, err := h.db.Query(c.Request.Context(), `
 		SELECT id, st_job_id, name, network_id, schema_id, source_node_id, target_node_id, job_type, status, progress,
 		       records_processed, records_total, rows_extracted, rows_uploaded, error_message,
+		       CASE
+		         WHEN started_at IS NOT NULL AND completed_at IS NOT NULL THEN EXTRACT(EPOCH FROM (completed_at - started_at))
+		         WHEN started_at IS NOT NULL THEN EXTRACT(EPOCH FROM (NOW() - started_at))
+		         ELSE NULL
+		       END as duration_seconds,
 		       TO_CHAR(started_at, 'YYYY-MM-DD HH24:MI:SS') as started_at,
 		       TO_CHAR(completed_at, 'YYYY-MM-DD HH24:MI:SS') as completed_at,
 		       TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS') as created_at,
@@ -59,7 +65,8 @@ func (h *JobHandler) ListJobs(c *gin.Context) {
 		FROM SD_JOBS ORDER BY id DESC
 	`)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Failed to list jobs: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch job list"})
 		return
 	}
 	defer rows.Close()
@@ -69,9 +76,10 @@ func (h *JobHandler) ListJobs(c *gin.Context) {
 		var j JobResponse
 		if err := rows.Scan(&j.ID, &j.STJobID, &j.Name, &j.NetworkID, &j.SchemaID, &j.SourceNodeID, &j.TargetNodeID,
 			&j.JobType, &j.Status, &j.Progress, &j.RecordsProcessed, &j.RecordsTotal,
-			&j.RowsExtracted, &j.RowsUploaded, &j.ErrorMessage,
+			&j.RowsExtracted, &j.RowsUploaded, &j.ErrorMessage, &j.DurationSeconds,
 			&j.StartedAt, &j.CompletedAt, &j.CreatedAt, &j.UpdatedAt); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			log.Printf("Failed to scan job row: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal data processing error"})
 			return
 		}
 		jobs = append(jobs, j)
@@ -101,7 +109,7 @@ func (h *JobHandler) CreateJob(c *gin.Context) {
 
 	var req CreateJobRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
 		return
 	}
 
@@ -115,7 +123,8 @@ func (h *JobHandler) CreateJob(c *gin.Context) {
 		VALUES ($1, $2, $3, $4, $5, $6, 'pending', 0) RETURNING id
 	`, req.Name, req.SourceNodeID, req.TargetNodeID, req.NetworkID, req.SchemaID, req.JobType).Scan(&id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to create job: %v", err)})
+		log.Printf("Failed to create job: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save job to database"})
 		return
 	}
 
@@ -140,6 +149,11 @@ func (h *JobHandler) GetJob(c *gin.Context) {
 	err := h.db.QueryRow(c.Request.Context(), `
 		SELECT id, st_job_id, name, network_id, schema_id, source_node_id, target_node_id, job_type, status, progress,
 		       records_processed, records_total, rows_extracted, rows_uploaded, error_message,
+		       CASE
+		         WHEN started_at IS NOT NULL AND completed_at IS NOT NULL THEN EXTRACT(EPOCH FROM (completed_at - started_at))
+		         WHEN started_at IS NOT NULL THEN EXTRACT(EPOCH FROM (NOW() - started_at))
+		         ELSE NULL
+		       END as duration_seconds,
 		       TO_CHAR(started_at, 'YYYY-MM-DD HH24:MI:SS') as started_at,
 		       TO_CHAR(completed_at, 'YYYY-MM-DD HH24:MI:SS') as completed_at,
 		       TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS') as created_at,
@@ -147,7 +161,7 @@ func (h *JobHandler) GetJob(c *gin.Context) {
 		FROM SD_JOBS WHERE id = $1
 	`, id).Scan(&j.ID, &j.STJobID, &j.Name, &j.NetworkID, &j.SchemaID, &j.SourceNodeID, &j.TargetNodeID,
 		&j.JobType, &j.Status, &j.Progress, &j.RecordsProcessed, &j.RecordsTotal,
-		&j.RowsExtracted, &j.RowsUploaded, &j.ErrorMessage,
+		&j.RowsExtracted, &j.RowsUploaded, &j.ErrorMessage, &j.DurationSeconds,
 		&j.StartedAt, &j.CompletedAt, &j.CreatedAt, &j.UpdatedAt)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Job not found"})
@@ -166,7 +180,8 @@ func (h *JobHandler) DeleteJob(c *gin.Context) {
 	id := c.Param("id")
 	tag, err := h.db.Exec(c.Request.Context(), "DELETE FROM SD_JOBS WHERE id=$1", id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Failed to delete job %s: %v", id, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Deletion command failed"})
 		return
 	}
 	if tag.RowsAffected() == 0 {
@@ -190,7 +205,8 @@ func (h *JobHandler) StartJob(c *gin.Context) {
 		WHERE id=$1 AND status IN ('pending', 'failed', 'completed')
 	`, idInt)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Failed to start job %d: %v", idInt, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database update failed on job start"})
 		return
 	}
 	if tag.RowsAffected() == 0 {
@@ -229,7 +245,8 @@ func (h *JobHandler) AbortJob(c *gin.Context) {
 		WHERE id=$1 AND status='running'
 	`, id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Failed to abort job %s: %v", id, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Abort command failed"})
 		return
 	}
 	if tag.RowsAffected() == 0 {
@@ -254,7 +271,8 @@ func (h *JobHandler) ResetJob(c *gin.Context) {
 		WHERE id=$1
 	`, id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Failed to reset job %s: %v", id, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Reset command failed"})
 		return
 	}
 	if tag.RowsAffected() == 0 {

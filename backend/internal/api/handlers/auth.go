@@ -7,10 +7,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/bintang/remake-dsp-backend/internal/config"
 	"golang.org/x/crypto/bcrypt"
 )
+
+const cookieName = "sync_go_token"
+const tokenExpiry = 2 * time.Hour // Reduced from 24h for security
 
 type AuthHandler struct {
 	db  *pgxpool.Pool
@@ -34,7 +38,7 @@ type LoginResponse struct {
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
 		return
 	}
 
@@ -66,11 +70,15 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		// We don't return error here because login is still successful
 	}
 
-	// Generate JWT token
+	now := time.Now()
+
+	// Generate JWT token with improved claims
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub":  req.Username,
 		"role": role,
-		"exp":  time.Now().Add(time.Hour * 24).Unix(),
+		"iat":  now.Unix(),                    // Issued at — enables token age validation
+		"jti":  uuid.New().String(),           // JWT ID — enables token revocation/blacklisting
+		"exp":  now.Add(tokenExpiry).Unix(),   // Reduced to 2 hours (was 24h)
 	})
 
 	tokenString, err := token.SignedString([]byte(h.cfg.JWTSecret))
@@ -80,10 +88,29 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
+	// Set JWT as HttpOnly cookie — JavaScript cannot access this, preventing XSS token theft
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie(
+		cookieName,                     // name
+		tokenString,                    // value
+		int(tokenExpiry.Seconds()),     // maxAge (2 hours)
+		"/",                            // path
+		"",                             // domain (auto)
+		false,                          // secure (set true when HTTPS)
+		true,                           // httpOnly — this is the key security improvement
+	)
+
+	// Return user info (but NOT the token — it's in the cookie now)
 	c.JSON(http.StatusOK, gin.H{
-		"token": tokenString,
-		"user":  req.Username,
-		"role":  role,
+		"message": "Login successful",
+		"user":    req.Username,
+		"role":    role,
 	})
 }
 
+// Logout clears the auth cookie
+func (h *AuthHandler) Logout(c *gin.Context) {
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie(cookieName, "", -1, "/", "", false, true)
+	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
+}

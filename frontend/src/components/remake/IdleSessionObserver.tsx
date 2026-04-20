@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { logout as apiLogout } from "@/lib/api";
 import { ShieldAlert, AlertTriangle, Clock, LogOut, Check } from "lucide-react";
 
 const TIMEOUT_DURATION = 30 * 60 * 1000; // 30 minutes
@@ -16,8 +17,12 @@ export default function IdleSessionObserver() {
   const warningTimerRef = useRef<NodeJS.Timeout | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
 
-  const logout = useCallback(() => {
-    sessionStorage.removeItem("auth_token");
+  const logout = useCallback(async () => {
+    try {
+      await apiLogout();
+    } catch (err) {
+      console.error("Inactivity logout failed:", err);
+    }
     sessionStorage.removeItem("auth_user");
     router.push("/login");
   }, [router]);

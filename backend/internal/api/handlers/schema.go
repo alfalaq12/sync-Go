@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -64,7 +65,8 @@ func (h *SchemaHandler) ListSchemas(c *gin.Context) {
 		FROM M_SCHEMA s ORDER BY s.updated_at DESC
 	`)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Failed to list schemas: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve schema list"})
 		return
 	}
 	defer rows.Close()
@@ -74,7 +76,8 @@ func (h *SchemaHandler) ListSchemas(c *gin.Context) {
 		var s SchemaResponse
 		var queriesCount int
 		if err := rows.Scan(&s.ID, &s.Name, &s.Owner, &s.Description, &s.Notes, &s.Status, &s.CreatedAt, &s.UpdatedAt, &queriesCount); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			log.Printf("Failed to scan schema row: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process database records"})
 			return
 		}
 		schemas = append(schemas, map[string]interface{}{
@@ -128,7 +131,7 @@ func (h *SchemaHandler) CreateSchema(c *gin.Context) {
 
 	var req CreateSchemaRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
 		return
 	}
 
@@ -138,7 +141,8 @@ func (h *SchemaHandler) CreateSchema(c *gin.Context) {
 
 	tx, err := h.db.Begin(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Failed to begin transaction for CreateSchema: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal database error"})
 		return
 	}
 	defer tx.Rollback(c.Request.Context())
@@ -149,7 +153,8 @@ func (h *SchemaHandler) CreateSchema(c *gin.Context) {
 		VALUES ($1, $2, $3, $4) RETURNING m_schema_id
 	`, req.Name, req.Owner, req.Description, req.Notes).Scan(&schemaID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to create schema: %v", err)})
+		log.Printf("Failed to create schema: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create schema"})
 		return
 	}
 
@@ -167,13 +172,15 @@ func (h *SchemaHandler) CreateSchema(c *gin.Context) {
 			q.ExtractPreQuery, q.ExtractPostQuery, q.UploadPreQuery, q.UploadPostQuery, 
 			q.SyncMethod, q.UpsertKeys, q.IncrementalCol, sortOrder)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to create query rule: %v", err)})
+			log.Printf("Failed to create query rule: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save schema rules"})
 			return
 		}
 	}
 
 	if err := tx.Commit(c.Request.Context()); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Failed to commit CreateSchema transaction: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to finalize schema creation"})
 		return
 	}
 
@@ -207,7 +214,8 @@ func (h *SchemaHandler) GetSchema(c *gin.Context) {
 		FROM M_SCHEMA_DETAILS WHERE schema_id = $1 ORDER BY sort_order ASC
 	`, id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Failed to fetch schema queries for id %s: %v", id, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch schema details"})
 		return
 	}
 	defer rows.Close()
@@ -218,7 +226,8 @@ func (h *SchemaHandler) GetSchema(c *gin.Context) {
 		if err := rows.Scan(&q.ID, &q.SchemaID, &q.SourceQuery, &q.TargetTable, &q.TruncateBefore, &q.BatchSize,
 			&q.ExtractPreQuery, &q.ExtractPostQuery, &q.UploadPreQuery, &q.UploadPostQuery, 
 			&q.SyncMethod, &q.UpsertKeys, &q.IncrementalCol, &q.SortOrder); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			log.Printf("Failed to scan query row: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Data processing error"})
 			return
 		}
 		queries = append(queries, q)
@@ -243,13 +252,14 @@ func (h *SchemaHandler) UpdateSchema(c *gin.Context) {
 	id := c.Param("id")
 	var req CreateSchemaRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
 		return
 	}
 
 	tx, err := h.db.Begin(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Failed to begin transaction for UpdateSchema: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal update error"})
 		return
 	}
 	defer tx.Rollback(c.Request.Context())
@@ -259,7 +269,8 @@ func (h *SchemaHandler) UpdateSchema(c *gin.Context) {
 		WHERE m_schema_id=$5
 	`, req.Name, req.Owner, req.Description, req.Notes, id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Failed to update schema %s: %v", id, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Schema update failed"})
 		return
 	}
 	if tag.RowsAffected() == 0 {
@@ -283,13 +294,15 @@ func (h *SchemaHandler) UpdateSchema(c *gin.Context) {
 			q.ExtractPreQuery, q.ExtractPostQuery, q.UploadPreQuery, q.UploadPostQuery, 
 			q.SyncMethod, q.UpsertKeys, q.IncrementalCol, sortOrder)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to update query: %v", err)})
+			log.Printf("Failed to update query for schema %s: %v", id, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update query rules"})
 			return
 		}
 	}
 
 	if err := tx.Commit(c.Request.Context()); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Failed to commit UpdateSchema transaction for id %s: %v", id, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to finalize updates"})
 		return
 	}
 
@@ -305,7 +318,8 @@ func (h *SchemaHandler) DeleteSchema(c *gin.Context) {
 	id := c.Param("id")
 	tag, err := h.db.Exec(c.Request.Context(), "DELETE FROM M_SCHEMA WHERE m_schema_id=$1", id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Failed to delete schema %s: %v", id, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Deletion command failed"})
 		return
 	}
 	if tag.RowsAffected() == 0 {

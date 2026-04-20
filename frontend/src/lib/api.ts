@@ -4,30 +4,28 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v
 
 const api = axios.create({
   baseURL: API_BASE,
+  withCredentials: true, // Required for HttpOnly cookies to be sent
 });
 
-// Attach JWT token to every request
-api.interceptors.request.use((config) => {
-  if (typeof window !== "undefined") {
-    const token = sessionStorage.getItem("auth_token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  }
-  return config;
-});
+// Interceptor removed: Browser handles HttpOnly cookies automatically when withCredentials: true is set.
 
 // Auto-logout on 401
 api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401 && typeof window !== "undefined") {
-      sessionStorage.removeItem("auth_token");
-      window.location.href = "/login";
+      sessionStorage.removeItem("auth_user");
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(err);
   }
 );
+
+// ─── Authentication ──────────────────────────────────────
+export const login = (credentials: any) => api.post("/login", credentials).then((r) => r.data);
+export const logout = () => api.post("/logout").then((r) => r.data);
 
 // ─── Nodes ───────────────────────────────────────────────
 export const fetchNodes = () => api.get("/nodes").then((r) => r.data);

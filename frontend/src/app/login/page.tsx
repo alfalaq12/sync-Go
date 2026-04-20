@@ -4,9 +4,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useMutation } from "@tanstack/react-query";
-import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import api from "@/lib/api";
 import { 
   Loader2, Eye, EyeOff, Lock, User, 
   Activity, ArrowRight, ShieldCheck, 
@@ -35,12 +35,12 @@ export default function LoginPage() {
 
   const loginMutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
-      const response = await axios.post(`${API_BASE}/login`, values);
+      const response = await api.post(`/login`, values);
       return response.data;
     },
     onSuccess: (data) => {
-      sessionStorage.setItem("auth_token", data.token);
+      // SECURITY FIX: Do not store sensitive tokens in sessionStorage (prevents XSS theft)
+      // Token is now stored in an HttpOnly cookie managed by the backend.
       if (data.user) sessionStorage.setItem("auth_user", typeof data.user === 'string' ? data.user : JSON.stringify(data.user));
       MySwal.fire({
         title: "Authenticated",

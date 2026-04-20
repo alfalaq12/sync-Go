@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchLogs } from "@/lib/api";
 import { Terminal, AlertCircle, Filter, Search } from "lucide-react";
+import { Breadcrumbs } from "@/components/remake/Breadcrumbs";
+import { cn } from "@/lib/utils";
 
 const levelColors: Record<string, string> = {
   INFO: "text-blue-400",
@@ -34,24 +36,25 @@ export default function LogsPage() {
 
   return (
     <div className="p-8 max-w-[1600px] mx-auto animate-in fade-in duration-500">
+      <Breadcrumbs />
       
       {/* Header Section */}
       <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <div className="p-1.5 rounded-lg bg-[#1E90FF]/10 text-[#1E90FF]">
+            <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
               <Terminal className="w-6 h-6" />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight text-[#0F172A]">Sistem Log & Diagnostik</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">System Logs & Diagnostics</h1>
           </div>
-          <p className="text-[14px] font-medium text-[#64748B] ml-1">Pantau telemetri real-time dan history diagnostik dari setiap aksi sinkronisasi server.</p>
+          <p className="text-[14px] font-medium text-muted-foreground ml-1">Monitor real-time telemetry and diagnostic history of every server synchronization action.</p>
         </div>
       </div>
 
       {isLoading && (
-        <div className="flex items-center gap-3 text-[#64748B] py-10 justify-center">
-          <div className="animate-spin h-5 w-5 border-2 border-[#1E90FF] border-t-transparent rounded-full" />
-          <span className="text-[11px] font-bold uppercase tracking-widest text-[#94A3B8]">Mendengarkan aliran log jaringan...</span>
+        <div className="flex items-center gap-3 text-muted-foreground py-10 justify-center">
+          <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
+          <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/60">Listening to network log stream...</span>
         </div>
       )}
 
@@ -59,61 +62,61 @@ export default function LogsPage() {
         <div className="enterprise-card bg-red-50 border border-red-100 p-6 flex items-center gap-4 text-red-600 mb-8">
            <AlertCircle className="w-6 h-6" />
            <div className="flex flex-col">
-              <span className="text-sm font-bold uppercase tracking-tight">Koneksi Log Gagal</span>
-              <span className="text-xs opacity-80">Sistem gagal terhubung ke registri log jaringan (Silakan periksa koneksi backend).</span>
+              <span className="text-sm font-bold uppercase tracking-tight">Log Connection Failed</span>
+              <span className="text-xs opacity-80">System failed to connect to the network log registry (Please check backend connection).</span>
            </div>
         </div>
       )}
 
       {data && (
-        <div className="enterprise-card bg-white border border-[#E2E8F0] shadow-2xl overflow-hidden flex flex-col h-[calc(100vh-320px)] min-h-[600px]">
+        <div className="enterprise-card border border-border shadow-2xl overflow-hidden flex flex-col h-[calc(100vh-320px)] min-h-[600px]">
           
           {/* Terminal Toolbar */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-6 py-4 bg-[#F8FAFC] border-b border-[#E2E8F0] gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-6 py-4 bg-muted/30 border-b border-border gap-4">
             <div className="flex items-center gap-4 w-full sm:w-auto">
               <div className="flex gap-1.5 shrink-0">
-                 <div className="w-3 h-3 rounded-full bg-[#E2E8F0]" />
-                 <div className="w-3 h-3 rounded-full bg-[#E2E8F0]" />
-                 <div className="w-3 h-3 rounded-full bg-[#E2E8F0]" />
+                 <div className="w-3 h-3 rounded-full bg-border" />
+                 <div className="w-3 h-3 rounded-full bg-border" />
+                 <div className="w-3 h-3 rounded-full bg-border" />
               </div>
-              <div className="h-4 w-px bg-[#E2E8F0] mx-1 shrink-0 hidden sm:block" />
+              <div className="h-4 w-px bg-border mx-1 shrink-0 hidden sm:block" />
               
               {/* Filters */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-                <div className="flex items-center gap-2 bg-white rounded border border-[#E2E8F0] px-3 py-1 flex-1">
-                  <Filter className="w-3.5 h-3.5 text-[#94A3B8]" />
+                <div className="flex items-center gap-2 bg-card rounded border border-border px-3 py-1 flex-1">
+                  <Filter className="w-3.5 h-3.5 text-muted-foreground/50" />
                   <select 
                     value={nodeFilter}
                     onChange={(e) => setNodeFilter(e.target.value)}
-                    className="bg-transparent border-none text-[11px] font-bold text-[#64748B] uppercase tracking-wider outline-none w-full cursor-pointer p-0"
+                    className="bg-transparent border-none text-[11px] font-bold text-muted-foreground uppercase tracking-wider outline-none w-full cursor-pointer p-0"
                   >
-                    <option value="ALL">Semua Node</option>
+                    <option value="ALL">All Nodes</option>
                     {uniqueNodes.map((n: unknown) => (
                       <option key={n as string} value={n as string}>@{n as string}</option>
                     ))}
                   </select>
                 </div>
                 
-                <div className="flex items-center gap-2 bg-white rounded border border-[#E2E8F0] px-3 py-1 flex-1">
-                  <Search className="w-3.5 h-3.5 text-[#94A3B8]" />
+                <div className="flex items-center gap-2 bg-card rounded border border-border px-3 py-1 flex-1">
+                  <Search className="w-3.5 h-3.5 text-muted-foreground/50" />
                   <input
                     type="text"
-                    placeholder="Pencarian Log..."
+                    placeholder="Search Logs..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="bg-transparent border-none text-[11px] font-medium text-[#0F172A] outline-none w-full w-32 p-0"
+                    className="bg-transparent border-none text-[11px] font-medium text-foreground outline-none w-full w-32 p-0"
                   />
                 </div>
               </div>
             </div>
 
             <div className="flex items-center justify-between w-full sm:w-auto sm:justify-end gap-4 shrink-0">
-               <div className="px-2 py-0.5 rounded bg-white border border-[#E2E8F0] text-[10px] font-mono font-bold text-[#64748B]">
-                  Batas Tail: 200 data
+               <div className="px-2 py-0.5 rounded bg-card border border-border text-[10px] font-mono font-bold text-muted-foreground">
+                  Tail Limit: 200 lines
                </div>
-               <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100">
+               <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
                   <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]" />
-                  <span className="text-[9px] font-black text-emerald-700 uppercase tracking-widest">Integrasi Live Aktif</span>
+                  <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Live Integration Active</span>
                </div>
             </div>
           </div>
@@ -123,7 +126,7 @@ export default function LogsPage() {
             {filteredLogs.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center opacity-30 gap-4">
                 <Terminal className="w-12 h-12" />
-                <p className="text-[11px] font-bold uppercase tracking-[0.2em]">Sistem menuggu catatan log baru...</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em]">System waiting for new log records...</p>
               </div>
             ) : (
               filteredLogs.map((log: any) => (
@@ -147,12 +150,12 @@ export default function LogsPage() {
             )}
           </div>
 
-          <div className="px-6 py-3 bg-[#F8FAFC] border-t border-[#E2E8F0] flex items-center justify-between">
-             <span className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest hidden sm:block">
-                Status Buffer Log: Sinkronisasi Optimal 
+          <div className="px-6 py-3 bg-muted/30 border-t border-border flex items-center justify-between">
+             <span className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest hidden sm:block">
+                Log Buffer Status: Optimal Sync
              </span>
-             <span className="text-[10px] font-bold text-[#64748B]">
-                Update Terakhir: {new Date().toLocaleTimeString()}
+             <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-tight">
+                Last Updated: {new Date().toLocaleTimeString()}
              </span>
           </div>
         </div>

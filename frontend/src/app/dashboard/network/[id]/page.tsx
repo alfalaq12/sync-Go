@@ -10,23 +10,27 @@ import withReactContent from "sweetalert2-react-content";
 
 const MySwal = withReactContent(Swal);
 const swalTheme = { 
-  background: '#FFFFFF', 
-  color: '#0F172A', 
+  background: 'var(--card)', 
+  color: 'var(--foreground)', 
   customClass: { 
-    popup: 'enterprise-card shadow-2xl border border-[#E2E8F0]', 
+    popup: 'enterprise-card shadow-2xl border border-border', 
     confirmButton: 'premium-button premium-button-primary px-6 py-2 ml-4',
-    cancelButton: 'premium-button bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] px-6 py-2'
+    cancelButton: 'premium-button bg-muted text-muted-foreground border border-border px-6 py-2'
   } 
 };
+
+const DB_DRIVERS = ["postgresql", "mysql", "oracle", "sqlserver"];
+const FILE_DRIVERS = ["csv", "ftp", "sftp"];
 
 const DRIVER_OPTIONS = [
   { value: "", label: "Select Driver Engine" },
   { value: "postgresql", label: "PostgreSQL Standard" },
-  { value: "mysql", label: "MySQL Connector" },
-  { value: "oracle", label: "Oracle Enterprise" },
+  { value: "mysql", label: "MySQL (MariaDB)" },
+  { value: "oracle", label: "Oracle Database" },
+  { value: "sqlserver", label: "Microsoft SQL Server" },
   { value: "csv", label: "Flat File (CSV/TXT)" },
-  { value: "ftp", label: "FTP Protocol" },
-  { value: "sftp", label: "SFTP Secure" },
+  { value: "ftp", label: "File Transfer (FTP)" },
+  { value: "sftp", label: "Secure File Transfer (SFTP)" },
   { value: "api", label: "RESTful API Ingestion" },
 ];
 
@@ -42,7 +46,7 @@ const RESOURCE_TYPES = [
 
 const InputField = memo(({ label, value, onChange, mono, icon: Icon, placeholder, type = "text", disabled }: any) => (
   <div className={`space-y-2 group ${disabled ? 'opacity-70 pointer-events-none' : ''}`}>
-    <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest pl-1 flex items-center gap-2 group-focus-within:text-[#1E90FF] transition-colors">
+    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-1 flex items-center gap-2 group-focus-within:text-primary transition-colors">
       {Icon && <Icon className="w-3.5 h-3.5" />}
       {label}
     </label>
@@ -53,7 +57,7 @@ const InputField = memo(({ label, value, onChange, mono, icon: Icon, placeholder
         onChange={onChange} 
         disabled={disabled}
         placeholder={placeholder || ""} 
-        className={`w-full h-11 px-4 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] text-[13px] font-medium text-[#0F172A] focus:outline-none focus:ring-4 focus:ring-[#1E90FF]/5 focus:border-[#1E90FF] transition-all placeholder:text-[#94A3B8] ${mono ? 'font-mono text-[#0F172A] font-bold bg-white' : ''} ${disabled ? 'cursor-not-allowed bg-slate-50' : ''}`} 
+        className={`w-full h-11 px-4 rounded-lg border border-border bg-muted/50 text-[13px] font-medium text-foreground focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all placeholder:text-muted-foreground/50 ${mono ? 'font-mono text-foreground font-bold bg-card' : ''} ${disabled ? 'cursor-not-allowed bg-muted/30' : ''}`} 
       />
     </div>
   </div>
@@ -62,7 +66,7 @@ InputField.displayName = "InputField";
 
 const SelectField = memo(({ label, value, onChange, options, icon: Icon, disabled }: any) => (
   <div className={`space-y-2 ${disabled ? 'opacity-70 pointer-events-none' : ''}`}>
-    <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest pl-1 flex items-center gap-2">
+    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-1 flex items-center gap-2">
       {Icon && <Icon className="w-3.5 h-3.5" />}
       {label}
     </label>
@@ -71,11 +75,11 @@ const SelectField = memo(({ label, value, onChange, options, icon: Icon, disable
         value={value} 
         onChange={onChange} 
         disabled={disabled}
-        className={`w-full h-11 px-4 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] text-[13px] font-medium text-[#0F172A] focus:outline-none focus:ring-4 focus:ring-[#1E90FF]/5 focus:border-[#1E90FF] transition-all appearance-none cursor-pointer pr-10 ${disabled ? 'cursor-not-allowed bg-slate-50' : ''}`}
+        className={`w-full h-11 px-4 rounded-lg border border-border bg-muted/50 text-[13px] font-medium text-foreground focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all appearance-none cursor-pointer pr-10 ${disabled ? 'cursor-not-allowed bg-muted/30' : ''}`}
       >
         {options.map((o: any) => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
-      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#94A3B8]">
+      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground/50">
          <ArrowDownUp className="w-3.5 h-3.5" />
       </div>
     </div>
@@ -91,6 +95,7 @@ export default function NetworkEditPage() {
   const isViewOnly = searchParams.get('mode') === 'view';
 
   const [form, setForm] = useState({
+    sid: "", name: "",
     schema_id: null as number | null,
     source_node_id: "" as string | number, target_node_id: "" as string | number,
     source_driver: "", source_resource_type: "", source_host: "", source_port: "",
@@ -101,7 +106,15 @@ export default function NetworkEditPage() {
     schedule_engine: "manual", cron_expression: "" as string, notes: "", owner: "admin",
   });
 
-  const { data: netData } = useQuery({ queryKey: ["network", params?.id], queryFn: () => getNetwork(params?.id as string), enabled: !isNew && !!params?.id });
+  const cloneId = searchParams.get('clone');
+  const actualId = cloneId || (params?.id as string);
+  const isClone = !!cloneId;
+
+  const { data: netData } = useQuery({ 
+    queryKey: ["network", actualId], 
+    queryFn: () => getNetwork(actualId), 
+    enabled: (!isNew || isClone) && !!actualId 
+  });
   const { data: nodesData } = useQuery({ queryKey: ["nodes"], queryFn: fetchNodes });
   const { data: schemasData } = useQuery({ queryKey: ["schemas"], queryFn: fetchSchemas });
   const { data: credsData } = useQuery({ queryKey: ["credentials"], queryFn: fetchCredentials });
@@ -110,6 +123,8 @@ export default function NetworkEditPage() {
     if (netData?.data) {
       const n = netData.data;
       setForm({
+        sid: isClone ? `${n.sid || ''}_CLONE` : (n.sid || ""),
+        name: isClone ? `${n.name || ''} (Cloned)` : (n.name || ""),
         schema_id: n.schema_id, 
         source_node_id: n.source_node_id || "", 
         target_node_id: n.target_node_id || "",
@@ -128,7 +143,7 @@ export default function NetworkEditPage() {
         notes: n.notes || "", owner: n.owner || "admin",
       });
     }
-  }, [netData]);
+  }, [netData, isClone]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -206,22 +221,22 @@ export default function NetworkEditPage() {
       {/* Header Section */}
       <div className="mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div className="flex items-center gap-5">
-           <button 
+          <button 
             onClick={() => router.push("/dashboard/network")}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-white border border-[#E2E8F0] shadow-sm text-[#64748B] hover:text-[#1E90FF] hover:border-[#1E90FF] transition-all"
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-card border border-border shadow-sm text-muted-foreground hover:text-primary hover:border-primary transition-all"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <div className="p-1.5 rounded-lg bg-[#1E90FF]/10 text-[#1E90FF]">
+              <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
                 <Network className="w-6 h-6" />
               </div>
-              <h1 className="text-2xl font-bold tracking-tight text-[#0F172A]">
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">
                 {isNew ? "Create Network Topology" : isViewOnly ? "View Network Topology" : "Modify Network Topology"}
               </h1>
             </div>
-            <p className="text-[14px] font-medium text-[#64748B]">Architect high-availability data streams between secure endpoints.</p>
+            <p className="text-[14px] font-medium text-muted-foreground">Architect high-availability data streams between secure endpoints.</p>
           </div>
         </div>
       </div>
@@ -229,9 +244,18 @@ export default function NetworkEditPage() {
       <div className="grid gap-10">
         
         {/* Module Settings Card */}
-        <div className="enterprise-card bg-white p-8 shadow-lg border border-[#E2E8F0] overflow-hidden relative">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#1E90FF] to-[#00C6AD]" />
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 relative">
+        <div className="enterprise-card bg-card p-8 shadow-lg border border-border overflow-hidden relative">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-emerald-500" />
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-5 relative">
+            <InputField 
+              label="Network Name (SID)" 
+              icon={Network}
+              disabled={isViewOnly}
+              value={form.sid} 
+              onChange={(e: any) => setForm({...form, sid: e.target.value})} 
+              placeholder="e.g. NET_PROD_SBD"
+              mono
+            />
             <SelectField 
               label="Mapping Logic" 
               icon={Database}
@@ -266,7 +290,7 @@ export default function NetworkEditPage() {
           </div>
           
           {form.schedule_engine === 'cron' && (
-            <div className="mt-8 pt-6 border-t border-[#E2E8F0] animate-in slide-in-from-top-4 duration-300">
+            <div className="mt-8 pt-6 border-t border-border animate-in slide-in-from-top-4 duration-300">
               <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
                 <SelectField 
                   label="Execution Interval" 
@@ -295,9 +319,9 @@ export default function NetworkEditPage() {
                     mono
                   />
                 )}
-                <div className="lg:col-span-2 flex items-center p-4 bg-amber-50 rounded-lg border border-amber-100">
+                <div className="lg:col-span-2 flex items-center p-4 bg-amber-500/10 rounded-lg border border-amber-500/20">
                    <Info className="w-5 h-5 text-amber-500 mr-3 flex-shrink-0" />
-                   <p className="text-[12px] text-amber-800 font-medium">
+                   <p className="text-[12px] text-amber-500 font-medium">
                      Scheduling is powered by <strong>robfig/cron</strong>. The engine will automatically wake up and pull data from source based on this interval.
                    </p>
                 </div>
@@ -310,45 +334,52 @@ export default function NetworkEditPage() {
         <div className="grid gap-10 lg:grid-cols-2">
           
           {/* SOURCE (UPSTREAM) */}
-          <div className="enterprise-card bg-white border border-[#E2E8F0] overflow-hidden shadow-xl flex flex-col group hover:border-[#1E90FF] transition-all duration-300">
-            <div className="bg-[#F8FAFC] border-b border-[#E2E8F0] p-6 flex items-center justify-between">
-              <h2 className="text-[11px] font-black text-[#1E90FF] tracking-widest uppercase flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-[#1E90FF] animate-pulse" />
+          <div className="enterprise-card bg-card border border-border overflow-hidden shadow-xl flex flex-col group hover:border-primary transition-all duration-300">
+            <div className="bg-muted/20 border-b border-border p-6 flex items-center justify-between">
+              <h2 className="text-[11px] font-black text-primary tracking-widest uppercase flex items-center gap-3">
+                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                 Source Configuration
               </h2>
-              <Globe className="w-4.5 h-4.5 text-[#1E90FF]/30 group-hover:rotate-12 transition-transform" />
+              <Globe className="w-4.5 h-4.5 text-primary/30 group-hover:rotate-12 transition-transform" />
             </div>
             <div className="p-8 space-y-6 flex-1">
               <div className="grid sm:grid-cols-2 gap-6">
-                <SelectField label="Origin Node" disabled={isViewOnly} value={form.source_node_id} onChange={(e: any) => setForm({...form, source_node_id: e.target.value})} options={[{value: "", label: "Select Origin..."}, ...nodes.map((n: any) => ({value: n.id, label: `${n.node_code} (${n.node_name || n.hostname})`}))]} />
-                <SelectField label="Core Driver" disabled={isViewOnly} value={form.source_driver} onChange={(e: any) => setForm({...form, source_driver: e.target.value})} options={DRIVER_OPTIONS} />
+                <SelectField label="Node" disabled={isViewOnly} value={form.source_node_id} onChange={(e: any) => setForm({...form, source_node_id: e.target.value})} options={[{value: "", label: "Select Node..."}, ...nodes.map((n: any) => ({value: n.id, label: `${n.node_code} (${n.node_name || n.hostname})`}))]} />
+                <SelectField label="Driver" disabled={isViewOnly} value={form.source_driver} onChange={(e: any) => setForm({...form, source_driver: e.target.value})} options={DRIVER_OPTIONS} />
               </div>
               <SelectField label="Connectivity Type" disabled={isViewOnly} value={form.source_resource_type} onChange={(e: any) => setForm({...form, source_resource_type: e.target.value})} options={RESOURCE_TYPES} />
               
-              {form.source_driver !== 'csv' ? (
+              {DB_DRIVERS.includes(form.source_driver) ? (
                 <>
                   <div className="grid sm:grid-cols-3 gap-6">
                     <div className="sm:col-span-2"><InputField label="Cloud/Local Host" disabled={isViewOnly} value={form.source_host} onChange={(e: any) => setForm({...form, source_host: e.target.value})} mono icon={Server} placeholder="db.origin.com" /></div>
-                    <InputField label="Port" disabled={isViewOnly} value={form.source_port} onChange={(e: any) => setForm({...form, source_port: e.target.value})} mono placeholder="5432" />
+                    <InputField label="Port" disabled={isViewOnly} value={form.source_port} onChange={(e: any) => setForm({...form, source_port: e.target.value})} mono placeholder={form.source_driver === 'postgresql' ? "5432" : "3306"} />
                   </div>
 
-                  <InputField label="Source Database Name" disabled={isViewOnly} value={form.source_database} onChange={(e: any) => setForm({...form, source_database: e.target.value})} mono placeholder="production_db" />
+                  <InputField 
+                    label={form.source_driver === 'oracle' ? "SID / Service Name" : "Source Database Name"} 
+                    disabled={isViewOnly} 
+                    value={form.source_database} 
+                    onChange={(e: any) => setForm({...form, source_database: e.target.value})} 
+                    mono 
+                    placeholder={form.source_driver === 'oracle' ? "ORCL" : "production_db"} 
+                  />
                   
                   <div className="grid sm:grid-cols-2 gap-6">
-                    <InputField label="Service Account" disabled={isViewOnly} value={form.source_username} onChange={(e: any) => setForm({...form, source_username: e.target.value})} placeholder="usr_sync" />
+                    <InputField label="User" disabled={isViewOnly} value={form.source_username} onChange={(e: any) => setForm({...form, source_username: e.target.value})} placeholder="usr_sync" />
                     <div className={`space-y-2 ${isViewOnly ? 'opacity-70 pointer-events-none' : ''}`}>
                        <div className="flex items-center justify-between px-1">
-                          <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest flex items-center gap-2">
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                             <KeyRound className="w-3.5 h-3.5" />
                             Auth Vault
                           </label>
-                          <span className="text-[9px] font-bold text-[#1E90FF] uppercase cursor-help hover:underline" title="Select a shared credential from your Vault to override manual password.">Use shared?</span>
+                          <span className="text-[9px] font-bold text-primary uppercase cursor-help hover:underline" title="Select a shared credential from your Vault to override manual password.">Use shared?</span>
                        </div>
                        <select 
                           value={form.source_credential_id || ""} 
                           disabled={isViewOnly}
                           onChange={(e) => setForm({...form, source_credential_id: e.target.value ? parseInt(e.target.value) : null})}
-                          className={`w-full h-11 px-4 rounded-lg border border-[#E2E8F0] bg-white text-[12px] font-bold text-[#1E90FF] focus:outline-none focus:ring-4 focus:ring-[#1E90FF]/5 focus:border-[#1E90FF] transition-all appearance-none cursor-pointer ${isViewOnly ? 'cursor-not-allowed bg-slate-50' : ''}`}
+                          className={`w-full h-11 px-4 rounded-lg border border-border bg-card text-[12px] font-bold text-primary focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all appearance-none cursor-pointer ${isViewOnly ? 'cursor-not-allowed bg-muted/30' : ''}`}
                        >
                           <option value="">— Use Manual Password Below —</option>
                           {(credsData?.data || []).map((c: any) => (
@@ -361,17 +392,17 @@ export default function NetworkEditPage() {
                   {!form.source_credential_id ? (
                     <InputField label="Key Secret (Manual)" type="password" value={form.source_password} onChange={(e: any) => setForm({...form, source_password: e.target.value})} icon={Lock} placeholder="••••••••" />
                   ) : (
-                    <div className="p-3 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-between">
-                       <span className="text-[11px] font-bold text-[#1E90FF] uppercase tracking-wider">Linked to Vault Identity</span>
-                       <Shield className="w-4 h-4 text-[#1E90FF]" />
+                    <div className="p-3 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-between">
+                       <span className="text-[11px] font-bold text-primary uppercase tracking-wider">Linked to Vault Identity</span>
+                       <Shield className="w-4 h-4 text-primary" />
                     </div>
                   )}
                 </>
               ) : (
-                <div className="space-y-6 p-6 rounded-xl bg-slate-50 border border-slate-200 border-dashed animate-in fade-in duration-300">
+                <div className="space-y-6 p-6 rounded-xl bg-muted/30 border border-border border-dashed animate-in fade-in duration-300">
                   <div className="flex items-center gap-3 mb-2">
-                    <Info className="w-4 h-4 text-slate-400" />
-                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Flat File Configuration</span>
+                    <Info className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Flat File Configuration</span>
                   </div>
                   <div className="grid sm:grid-cols-3 gap-6">
                     <InputField label="CSV Separator" disabled={isViewOnly} value={form.source_csv_separator} onChange={(e: any) => setForm({...form, source_csv_separator: e.target.value})} mono placeholder="|" />
@@ -379,9 +410,9 @@ export default function NetworkEditPage() {
                     <div className="flex items-center gap-4 pt-6">
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" disabled={isViewOnly} checked={form.source_csv_header} onChange={(e: any) => setForm({...form, source_csv_header: e.target.checked})} className="sr-only peer" />
-                        <div className="w-10 h-5.5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-[#1E90FF] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all shadow-inner"></div>
+                        <div className="w-10 h-5.5 bg-muted/50 border border-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all shadow-inner"></div>
                       </label>
-                      <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wide">Has Header</span>
+                      <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">Has Header</span>
                     </div>
                   </div>
                 </div>
@@ -390,53 +421,60 @@ export default function NetworkEditPage() {
               <InputField label="Resource Identifier Path" disabled={isViewOnly} value={form.source_path} onChange={(e: any) => setForm({...form, source_path: e.target.value})} mono placeholder="/mnt/data/source.csv" />
             </div>
             
-            <div className="p-6 border-t border-[#E2E8F0] bg-[#F8FAFC]/50 flex justify-center">
-              <button onClick={handleTestSource} className="h-10 px-8 rounded-lg bg-white border border-[#1E90FF] text-[#1E90FF] hover:bg-[#1E90FF] hover:text-white text-[11px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 group/btn">
+            <div className="p-6 border-t border-border bg-muted/10 flex justify-center">
+              <button onClick={handleTestSource} className="h-10 px-8 rounded-lg bg-card border border-primary text-primary hover:bg-primary hover:text-primary-foreground text-[11px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 group/btn">
                 <RefreshCcw className="w-3.5 h-3.5 group-hover/btn:rotate-180 transition-transform duration-500" /> Verify Source Connectivity
               </button>
             </div>
           </div>
 
           {/* TARGET (DOWNSTREAM) */}
-          <div className="enterprise-card bg-white border border-[#E2E8F0] overflow-hidden shadow-xl flex flex-col group hover:border-[#00C6AD] transition-all duration-300">
-            <div className="bg-[#F8FAFC] border-b border-[#E2E8F0] p-6 flex items-center justify-between">
-              <h2 className="text-[11px] font-black text-[#00C6AD] tracking-widest uppercase flex items-center gap-3">
+          <div className="enterprise-card bg-card border border-border overflow-hidden shadow-xl flex flex-col group hover:border-emerald-500 transition-all duration-300">
+            <div className="bg-muted/20 border-b border-border p-6 flex items-center justify-between">
+              <h2 className="text-[11px] font-black text-emerald-500 tracking-widest uppercase flex items-center gap-3">
                 <ArrowRight className="w-4 h-4" />
                 Target Destination
               </h2>
-              <Database className="w-4.5 h-4.5 text-[#00C6AD]/30 group-hover:-rotate-12 transition-transform" />
+              <Database className="w-4.5 h-4.5 text-emerald-500/30 group-hover:-rotate-12 transition-transform" />
             </div>
             <div className="p-8 space-y-6 flex-1">
                <div className="grid sm:grid-cols-2 gap-6">
-                <SelectField label="Destination Node" disabled={isViewOnly} value={form.target_node_id} onChange={(e: any) => setForm({...form, target_node_id: e.target.value})} options={[{value: "", label: "Select Destination..."}, ...nodes.map((n: any) => ({value: n.id, label: `${n.node_code} (${n.node_name || n.hostname})`}))]} />
-                <SelectField label="Core Driver" disabled={isViewOnly} value={form.target_driver} onChange={(e: any) => setForm({...form, target_driver: e.target.value})} options={DRIVER_OPTIONS} />
+                <SelectField label="Node" disabled={isViewOnly} value={form.target_node_id} onChange={(e: any) => setForm({...form, target_node_id: e.target.value})} options={[{value: "", label: "Select Node..."}, ...nodes.map((n: any) => ({value: n.id, label: `${n.node_code} (${n.node_name || n.hostname})`}))]} />
+                <SelectField label="Driver" disabled={isViewOnly} value={form.target_driver} onChange={(e: any) => setForm({...form, target_driver: e.target.value})} options={DRIVER_OPTIONS} />
               </div>
               <SelectField label="Connectivity Type" disabled={isViewOnly} value={form.target_resource_type} onChange={(e: any) => setForm({...form, target_resource_type: e.target.value})} options={RESOURCE_TYPES} />
               
-              {form.target_driver !== 'csv' ? (
+              {DB_DRIVERS.includes(form.target_driver) ? (
                 <>
                   <div className="grid sm:grid-cols-3 gap-6">
                     <div className="sm:col-span-2"><InputField label="Cloud/Local Host" disabled={isViewOnly} value={form.target_host} onChange={(e: any) => setForm({...form, target_host: e.target.value})} mono icon={Server} placeholder="rds.target.aws..." /></div>
-                    <InputField label="Port" disabled={isViewOnly} value={form.target_port} onChange={(e: any) => setForm({...form, target_port: e.target.value})} mono placeholder="3306" />
+                    <InputField label="Port" disabled={isViewOnly} value={form.target_port} onChange={(e: any) => setForm({...form, target_port: e.target.value})} mono placeholder={form.target_driver === 'mysql' ? "3306" : "5432"} />
                   </div>
 
-                  <InputField label="Target Database Name" disabled={isViewOnly} value={form.target_database} onChange={(e: any) => setForm({...form, target_database: e.target.value})} mono placeholder="warehouse_db" />
+                  <InputField 
+                    label={form.target_driver === 'oracle' ? "SID / Service Name" : "Target Database Name"} 
+                    disabled={isViewOnly} 
+                    value={form.target_database} 
+                    onChange={(e: any) => setForm({...form, target_database: e.target.value})} 
+                    mono 
+                    placeholder={form.target_driver === 'oracle' ? "XE" : "warehouse_db"} 
+                  />
                   
                   <div className="grid sm:grid-cols-2 gap-6">
-                    <InputField label="Service Account" disabled={isViewOnly} value={form.target_username} onChange={(e: any) => setForm({...form, target_username: e.target.value})} placeholder="usr_sink" />
+                    <InputField label="User" disabled={isViewOnly} value={form.target_username} onChange={(e: any) => setForm({...form, target_username: e.target.value})} placeholder="usr_sink" />
                     <div className={`space-y-2 ${isViewOnly ? 'opacity-70 pointer-events-none' : ''}`}>
                        <div className="flex items-center justify-between px-1">
-                          <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest flex items-center gap-2">
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                             <KeyRound className="w-3.5 h-3.5" />
                             Auth Vault
                           </label>
-                          <span className="text-[9px] font-bold text-[#00C6AD] uppercase cursor-help hover:underline" title="Select a shared credential from your Vault to override manual password.">Use shared?</span>
+                          <span className="text-[9px] font-bold text-emerald-500 uppercase cursor-help hover:underline" title="Select a shared credential from your Vault to override manual password.">Use shared?</span>
                        </div>
                        <select 
                           value={form.target_credential_id || ""} 
                           disabled={isViewOnly}
                           onChange={(e) => setForm({...form, target_credential_id: e.target.value ? parseInt(e.target.value) : null})}
-                          className={`w-full h-11 px-4 rounded-lg border border-[#E2E8F0] bg-white text-[12px] font-bold text-[#00C6AD] focus:outline-none focus:ring-4 focus:ring-[#00C6AD]/5 focus:border-[#00C6AD] transition-all appearance-none cursor-pointer ${isViewOnly ? 'cursor-not-allowed bg-slate-50' : ''}`}
+                          className={`w-full h-11 px-4 rounded-lg border border-border bg-card text-[12px] font-bold text-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 transition-all appearance-none cursor-pointer ${isViewOnly ? 'cursor-not-allowed bg-muted/30' : ''}`}
                        >
                           <option value="">— Use Manual Password Below —</option>
                           {(credsData?.data || []).map((c: any) => (
@@ -449,20 +487,20 @@ export default function NetworkEditPage() {
                   {!form.target_credential_id ? (
                     <InputField label="Key Secret (Manual)" type="password" value={form.target_password} onChange={(e: any) => setForm({...form, target_password: e.target.value})} icon={Lock} placeholder="••••••••" />
                   ) : (
-                    <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-between">
-                       <span className="text-[11px] font-bold text-[#00C6AD] uppercase tracking-wider">Linked to Vault Identity</span>
-                       <Shield className="w-4 h-4 text-[#00C6AD]" />
+                    <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between">
+                       <span className="text-[11px] font-bold text-emerald-500 uppercase tracking-wider">Linked to Vault Identity</span>
+                       <Shield className="w-4 h-4 text-emerald-500" />
                     </div>
                   )}
                 </>
               ) : (
-                <div className="space-y-6 p-6 rounded-xl bg-slate-50 border border-slate-200 border-dashed animate-in fade-in duration-300">
+                <div className="space-y-6 p-6 rounded-xl bg-muted/30 border border-border border-dashed animate-in fade-in duration-300">
                   <div className="flex items-center gap-3 mb-2">
                     <Info className="w-4 h-4 text-emerald-500" />
-                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">File Sink Configuration</span>
+                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">File Sink Configuration</span>
                   </div>
-                  <div className="p-4 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center gap-3">
-                     <p className="text-[11px] text-emerald-800 font-medium">Exporting to Flat File. Ensure the process has write permissions to the path below.</p>
+                  <div className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-3">
+                     <p className="text-[11px] text-emerald-500 font-medium">Exporting to Flat File. Ensure the process has write permissions to the path below.</p>
                   </div>
                 </div>
               )}
@@ -470,8 +508,8 @@ export default function NetworkEditPage() {
               <InputField label="Resource Identifier Path" disabled={isViewOnly} value={form.target_path} onChange={(e: any) => setForm({...form, target_path: e.target.value})} mono placeholder="/var/www/target/" />
             </div>
             
-            <div className="p-6 border-t border-[#E2E8F0] bg-[#F8FAFC]/50 flex justify-center">
-              <button onClick={handleTestTarget} className="h-10 px-8 rounded-lg bg-white border border-[#00C6AD] text-[#00C6AD] hover:bg-[#00C6AD] hover:text-white text-[11px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 group/btn">
+            <div className="p-6 border-t border-border bg-muted/10 flex justify-center">
+              <button onClick={handleTestTarget} className="h-10 px-8 rounded-lg bg-card border border-emerald-500 text-emerald-500 hover:bg-emerald-500 hover:text-white text-[11px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 group/btn">
                 <RefreshCcw className="w-3.5 h-3.5 group-hover/btn:rotate-180 transition-transform duration-500" /> Verify Target Connectivity
               </button>
             </div>
@@ -479,10 +517,10 @@ export default function NetworkEditPage() {
         </div>
 
         {/* Action Bar */}
-        <div className="flex items-center justify-between py-6 px-10 border border-[#E2E8F0] rounded-xl bg-[#F8FAFC]">
+        <div className="flex items-center justify-between py-6 px-10 border border-border rounded-xl bg-card">
           <button 
             onClick={() => router.push("/dashboard/network")} 
-            className="h-11 px-8 rounded-lg border border-[#E2E8F0] bg-white text-[11px] font-bold text-[#64748B] uppercase tracking-widest hover:bg-zinc-50 transition-all active:scale-[0.98]"
+            className="h-11 px-8 rounded-lg border border-border bg-card text-[11px] font-bold text-muted-foreground uppercase tracking-widest hover:bg-muted transition-all active:scale-[0.98]"
           >
             <ArrowLeft className="w-4 h-4 inline mr-2" /> {isViewOnly ? "Return to Gallery" : "Discard"}
           </button>
@@ -490,9 +528,9 @@ export default function NetworkEditPage() {
             <button 
               onClick={() => saveMutation.mutate()} 
               disabled={saveMutation.isPending} 
-              className="h-11 px-10 rounded-lg bg-[#1E90FF] text-white text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-[#1E90FF]/20 hover:bg-[#1c86ee] transition-all active:scale-[0.98] disabled:opacity-50"
+              className="h-11 px-10 rounded-lg bg-primary text-primary-foreground text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-50"
             >
-              <Save className="w-4 h-4 inline mr-2" /> {saveMutation.isPending ? 'Deploying Topology...' : 'Commit Topology Settings'}
+              <Save className="w-4 h-4 inline mr-2" /> {saveMutation.isPending ? 'Saving Configuration...' : 'Save Configuration'}
             </button>
           )}
         </div>

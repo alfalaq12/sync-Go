@@ -10,16 +10,18 @@ import { format } from "date-fns";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import { cn } from "@/lib/utils";
+import { Breadcrumbs } from "@/components/remake/Breadcrumbs";
+import { Pagination } from "@/components/remake/Pagination";
 
 const MySwal = withReactContent(Swal);
 
 const swalTheme = {
-  background: '#FFFFFF',
-  color: '#0F172A',
+  background: 'var(--card)',
+  color: 'var(--foreground)',
   customClass: {
-    popup: 'enterprise-card shadow-2xl border border-[#E2E8F0]',
+    popup: 'enterprise-card shadow-2xl border border-border',
     confirmButton: 'premium-button premium-button-primary px-6 py-2 ml-4',
-    cancelButton: 'premium-button bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] px-6 py-2'
+    cancelButton: 'premium-button bg-muted text-muted-foreground border border-border px-6 py-2'
   }
 };
 
@@ -42,8 +44,8 @@ export default function CredentialsPage() {
     setTimeout(() => {
       setIsManualRefreshing(false);
       MySwal.fire({
-        title: 'Berhasil',
-        text: 'Data kredensial berhasil diperbarui.',
+        title: 'Success',
+        text: 'Credential data updated successfully.',
         icon: 'success',
         toast: true,
         position: 'top-end',
@@ -59,10 +61,10 @@ export default function CredentialsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["credentials"] });
       setSelectedCredId(null);
-      MySwal.fire({ title: 'Terhapus!', text: 'Kredensial berhasil dihapus.', icon: 'success', ...swalTheme });
+      MySwal.fire({ title: 'Deleted!', text: 'Credential deleted successfully.', icon: 'success', ...swalTheme });
     },
     onError: (err: any) => {
-      MySwal.fire({ title: 'Gagal', text: err?.response?.data?.error || 'Gagal menghapus kredensial.', icon: 'error', ...swalTheme });
+      MySwal.fire({ title: 'Failed', text: err?.response?.data?.error || 'Failed to delete credential.', icon: 'error', ...swalTheme });
     }
   });
 
@@ -77,12 +79,12 @@ export default function CredentialsPage() {
   const handleDelete = () => {
     if (!selectedCred) return;
     MySwal.fire({
-      title: 'Hapus Kredensial?',
-      text: `Apakah Anda yakin ingin menghapus kredensial "${selectedCred.name}"? Kredensial ini tidak akan bisa dihapus jika masih terhubung dengan network jobs yang sedang aktif.`,
+      title: 'Delete Credential?',
+      text: `Are you sure you want to delete the credential "${selectedCred.name}"? This credential cannot be deleted if it is still connected to active network jobs.`,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: 'Ya, Hapus',
-      cancelButtonText: 'Batal',
+      confirmButtonText: 'Yes, Delete',
+      cancelButtonText: 'Cancel',
       ...swalTheme,
       customClass: {
         ...swalTheme.customClass,
@@ -98,30 +100,30 @@ export default function CredentialsPage() {
   const handleCreateOrEdit = (cred?: any) => {
     const targetCred = cred || selectedCred;
     MySwal.fire({
-      title: targetCred ? 'Edit Kredensial' : 'Kredensial Baru',
+      title: targetCred ? 'Edit Credential' : 'New Credential',
       html: `
         <div class="text-left space-y-4">
           <div>
-            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Friendly Name</label>
+            <label class="block text-xs font-bold text-muted-foreground uppercase mb-1">Friendly Name</label>
             <input id="swal-name" class="swal2-input !mt-0 !w-full" placeholder="e.g. Production PostgreSQL" value="${targetCred?.name || ''}">
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Database Username</label>
+            <label class="block text-xs font-bold text-muted-foreground uppercase mb-1">Database Username</label>
             <input id="swal-username" class="swal2-input !mt-0 !w-full" placeholder="e.g. postgres" value="${targetCred?.username || ''}">
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Password</label>
+            <label class="block text-xs font-bold text-muted-foreground uppercase mb-1">Password</label>
             <input id="swal-password" type="password" class="swal2-input !mt-0 !w-full" placeholder="Enter password">
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Notes</label>
+            <label class="block text-xs font-bold text-muted-foreground uppercase mb-1">Notes</label>
             <textarea id="swal-notes" class="swal2-textarea !mt-0 !w-full" placeholder="Additional details...">${targetCred?.notes || ''}</textarea>
           </div>
         </div>
       `,
       focusConfirm: false,
       showCancelButton: true,
-      confirmButtonText: targetCred ? 'Simpan Data' : 'Buat Baru',
+      confirmButtonText: targetCred ? 'Save Data' : 'Create New',
       ...swalTheme,
       preConfirm: () => {
         const name = (document.getElementById('swal-name') as HTMLInputElement).value;
@@ -150,7 +152,7 @@ export default function CredentialsPage() {
     mutationFn: (data: any) => createCredential(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["credentials"] });
-      MySwal.fire({ title: 'Berhasil', text: 'Kredensial berhasil dibuat.', icon: 'success', ...swalTheme });
+      MySwal.fire({ title: 'Success', text: 'Credential created successfully.', icon: 'success', ...swalTheme });
     }
   });
 
@@ -158,55 +160,56 @@ export default function CredentialsPage() {
     mutationFn: ({ id, data }: { id: string, data: any }) => updateCredential(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["credentials"] });
-      MySwal.fire({ title: 'Tersimpan!', text: 'Kredensial berhasil diperbarui.', icon: 'success', ...swalTheme });
+      MySwal.fire({ title: 'Saved!', text: 'Credential updated successfully.', icon: 'success', ...swalTheme });
     }
   });
 
   return (
     <div className="p-8 max-w-[1600px] mx-auto animate-in fade-in duration-500">
+      <Breadcrumbs />
       
       <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 mb-1">
-             <div className="p-1.5 rounded-lg bg-[#1E90FF]/10 text-[#1E90FF]">
+             <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
                 <Lock className="w-6 h-6" />
              </div>
-             <h1 className="text-3xl font-semibold tracking-tight text-[#0F172A]">Centralized Vault</h1>
+             <h1 className="text-3xl font-semibold tracking-tight text-foreground">Centralized Vault</h1>
           </div>
-          <p className="text-[14px] font-medium text-[#64748B]">Securely manage database credentials across your entire network.</p>
+          <p className="text-[14px] font-medium text-muted-foreground">Securely manage database credentials across your entire network.</p>
         </div>
         <div className="flex items-center gap-3">
           <button 
             onClick={handleRefresh} 
-            className="h-10 px-4 rounded-lg bg-white border border-[#E2E8F0] hover:bg-[#F8FAFC] text-[13px] font-semibold text-[#64748B] transition-all flex items-center gap-2 active:scale-95"
+            className="h-10 px-4 rounded-lg bg-card border border-border hover:bg-muted text-[13px] font-semibold text-muted-foreground transition-all flex items-center gap-2 active:scale-95"
           >
             <RefreshCw className={`w-4 h-4 ${(isFetching || isManualRefreshing) ? 'animate-spin' : ''}`} /> Refresh
           </button>
           <button 
             onClick={() => handleCreateOrEdit()}
-            className="h-10 px-5 rounded-lg bg-[#1E90FF] hover:bg-[#1c86ee] text-[13px] font-bold text-white shadow-lg shadow-[#1E90FF]/2 relative active:scale-[0.98] transition-all flex items-center gap-2"
+            className="h-10 px-5 rounded-lg bg-primary hover:bg-primary/90 text-[13px] font-bold text-primary-foreground shadow-lg shadow-primary/2 relative active:scale-[0.98] transition-all flex items-center gap-2"
           >
             <Plus className="w-4.5 h-4.5" /> New Credential
           </button>
         </div>
       </div>
 
-      <div className="enterprise-card flex flex-col bg-white border border-[#E2E8F0] overflow-hidden">
+      <div className="enterprise-card flex flex-col overflow-hidden">
         {/* Toolbar */}
-        <div className="p-5 border-b border-[#E2E8F0] flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#F8FAFC]/50">
+        <div className="p-5 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-muted/20">
           <div className="relative w-full max-w-sm">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94A3B8]" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
             <input 
               type="text" 
               placeholder="Search by name or username..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full h-11 pl-11 pr-4 rounded-lg border border-[#E2E8F0] bg-white text-[13px] font-medium text-[#0F172A] focus:ring-4 focus:ring-[#1E90FF]/5 focus:border-[#1E90FF] transition-all outline-none"
+              className="w-full h-11 pl-11 pr-4 rounded-lg border border-border bg-card text-[13px] font-medium text-foreground focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all outline-none"
             />
           </div>
-          <div className="flex items-center gap-3 px-4 py-2 bg-blue-50/50 rounded-lg border border-blue-100">
-             <ShieldCheck className="w-4 h-4 text-[#1E90FF]" />
-             <span className="text-[11px] font-bold text-[#1E90FF] uppercase tracking-wider">AES-256 GCM Encryption Active</span>
+          <div className="flex items-center gap-3 px-4 py-2 bg-primary/5 rounded-lg border border-primary/10">
+             <ShieldCheck className="w-4 h-4 text-primary" />
+             <span className="text-[11px] font-bold text-primary uppercase tracking-wider">AES-256 GCM Encryption Active</span>
           </div>
         </div>
 
@@ -214,21 +217,21 @@ export default function CredentialsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead>
-              <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+              <tr className="bg-muted/30 border-b border-border">
                 <th className="px-6 py-4 w-10"></th>
-                <th className="px-6 py-4 font-bold text-[#64748B] text-[11px] uppercase tracking-wider">ID</th>
-                <th className="px-6 py-4 font-bold text-[#64748B] text-[11px] uppercase tracking-wider">Friendly Name</th>
-                <th className="px-6 py-4 font-bold text-[#64748B] text-[11px] uppercase tracking-wider">Username</th>
-                <th className="px-6 py-4 font-bold text-[#64748B] text-[11px] uppercase tracking-wider">Notes</th>
-                <th className="px-6 py-4 font-bold text-[#64748B] text-[11px] uppercase tracking-wider text-right">Last Sync</th>
+                <th className="px-6 py-4 font-bold text-muted-foreground text-[11px] uppercase tracking-wider">ID</th>
+                <th className="px-6 py-4 font-bold text-muted-foreground text-[11px] uppercase tracking-wider">Friendly Name</th>
+                <th className="px-6 py-4 font-bold text-muted-foreground text-[11px] uppercase tracking-wider">Username</th>
+                <th className="px-6 py-4 font-bold text-muted-foreground text-[11px] uppercase tracking-wider">Notes</th>
+                <th className="px-6 py-4 font-bold text-muted-foreground text-[11px] uppercase tracking-wider text-right">Last Sync</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E2E8F0]">
+            <tbody className="divide-y divide-border">
               {isLoading && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-[#64748B]">
-                    <RefreshCw className="w-6 h-6 mx-auto animate-spin mb-3 text-[#1E90FF]" />
-                    <p className="font-medium">Membuka brankas sandi...</p>
+                  <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
+                    <RefreshCw className="w-6 h-6 mx-auto animate-spin mb-3 text-primary" />
+                    <p className="font-medium">Opening password vault...</p>
                   </td>
                 </tr>
               )}
@@ -236,7 +239,7 @@ export default function CredentialsPage() {
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-[#94A3B8]">
                     <Key className="w-8 h-8 mx-auto mb-3 opacity-30" />
-                    <p className="font-medium">Belum ada kredensial yang tersimpan di dalam brankas.</p>
+                    <p className="font-medium">No credentials saved in the vault yet.</p>
                   </td>
                 </tr>
               )}
@@ -247,32 +250,32 @@ export default function CredentialsPage() {
                     key={cred.id} 
                     onClick={() => setSelectedCredId(isSelected ? null : String(cred.id))}
                     className={cn(
-                        "hover:bg-[#F8FAFC] transition-all cursor-pointer group",
-                        isSelected ? "bg-[#F0F7FF] hover:bg-[#F0F7FF]" : ""
+                        "transition-all cursor-pointer group",
+                        isSelected ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/50"
                     )}
                   >
                     <td className="px-6 py-4.5 text-center">
                       <div className="flex items-center justify-center">
                         <div className={cn(
                             "w-4 h-4 rounded-full border flex items-center justify-center transition-all",
-                            isSelected ? "border-[#1E90FF] bg-[#1E90FF]" : "border-[#CBD5E1] bg-white group-hover:border-[#94A3B8]"
+                            isSelected ? "border-primary bg-primary" : "border-border bg-card group-hover:border-muted-foreground"
                         )}>
-                          {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
+                          {isSelected && <div className="w-1.5 h-1.5 bg-primary-foreground rounded-full" />}
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4.5 font-bold font-mono text-[12px] text-[#0F172A]">{cred.id}</td>
+                    <td className="px-6 py-4.5 font-bold font-mono text-[12px] text-foreground">{cred.id}</td>
                     <td className="px-6 py-4.5">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors">
+                        <div className="w-8 h-8 rounded bg-muted flex items-center justify-center text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
                           <Key className="w-4 h-4" />
                         </div>
-                        <span className="font-bold text-[#1E90FF]">{cred.name}</span>
+                        <span className="font-bold text-primary">{cred.name}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4.5 font-semibold text-[#1F2937] font-mono text-xs">{cred.username || "—"}</td>
-                    <td className="px-6 py-4.5 text-[12px] text-[#64748B] max-w-[300px] truncate">{cred.notes || "—"}</td>
-                    <td className="px-6 py-4.5 text-[11px] font-bold text-[#94A3B8] text-right">
+                    <td className="px-6 py-4.5 font-semibold text-foreground font-mono text-xs">{cred.username || "—"}</td>
+                    <td className="px-6 py-4.5 text-[12px] text-muted-foreground max-w-[300px] truncate">{cred.notes || "—"}</td>
+                    <td className="px-6 py-4.5 text-[11px] font-bold text-muted-foreground/60 text-right">
                       {cred.updated_at || cred.created_at}
                     </td>
                   </tr>
@@ -283,29 +286,38 @@ export default function CredentialsPage() {
         </div>
 
         {/* Action Bar */}
-        <div className="p-5 border-t border-[#E2E8F0] flex flex-wrap items-center justify-between bg-[#F8FAFC]/30">
+        <div className="p-5 border-t border-border flex flex-wrap items-center justify-between bg-muted/10">
           <div className="flex items-center gap-3">
              <button 
                 onClick={() => handleCreateOrEdit()}
                 disabled={!selectedCredId} 
-                className="h-10 px-5 rounded-lg border border-[#E2E8F0] bg-white text-[12px] font-bold text-[#64748B] hover:text-[#1E90FF] hover:border-[#1E90FF]/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 active:scale-95"
+                className="h-10 px-5 rounded-lg border border-border bg-card text-[12px] font-bold text-muted-foreground hover:text-primary hover:border-primary/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 active:scale-95"
              >
-               <Edit className="w-4 h-4" /> Edit Brankas
+               <Edit className="w-4 h-4" /> Edit Vault
              </button>
-             <div className="w-px h-6 bg-[#E2E8F0] mx-1" />
+             <div className="w-px h-6 bg-border mx-1" />
              <button 
                 onClick={handleDelete}
                 disabled={!selectedCredId} 
-                className="h-10 px-5 rounded-lg border border-[#E2E8F0] bg-white text-[12px] font-bold text-[#64748B] hover:text-red-500 hover:border-red-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 active:scale-95"
+                className="h-10 px-5 rounded-lg border border-border bg-card text-[12px] font-bold text-muted-foreground hover:text-red-500 hover:border-red-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 active:scale-95"
              >
-               <Trash2 className="w-4 h-4" /> Hapus Brankas
+               <Trash2 className="w-4 h-4" /> Delete Vault
              </button>
           </div>
           
-          <div className="text-[11px] font-bold text-[#94A3B8] uppercase tracking-widest">
-            {selectedCredId ? `Credential Terpilih: ${selectedCred?.name}` : 'Pilih kredensial untuk melakukan modifikasi data'}
+          <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
+            {selectedCredId ? `Selected Credential: ${selectedCred?.name}` : 'Select a credential to modify data'}
           </div>
         </div>
+
+        {/* Pagination placeholder as total is not defined similarly to other pages yet */}
+        <Pagination 
+          currentPage={1}
+          totalPages={1}
+          onPageChange={() => {}}
+          totalItems={credentials.length}
+          pageSize={10}
+        />
       </div>
     </div>
   );

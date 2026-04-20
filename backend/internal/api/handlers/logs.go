@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -38,7 +39,8 @@ func (h *LogHandler) ListLogs(c *gin.Context) {
 		FROM JOB_LOG ORDER BY created_at DESC LIMIT $1
 	`, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Failed to list logs: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch system logs"})
 		return
 	}
 	defer rows.Close()
@@ -47,7 +49,8 @@ func (h *LogHandler) ListLogs(c *gin.Context) {
 	for rows.Next() {
 		var l LogResponse
 		if err := rows.Scan(&l.ID, &l.NodeID, &l.Level, &l.Source, &l.Message, &l.CreatedAt); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			log.Printf("Failed to scan log row: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Data internal processing error"})
 			return
 		}
 		logs = append(logs, l)

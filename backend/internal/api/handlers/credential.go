@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/bintang/remake-dsp-backend/internal/utils"
@@ -34,7 +34,8 @@ func (h *CredentialHandler) ListCredentials(c *gin.Context) {
 		FROM M_CREDENTIALS ORDER BY name ASC
 	`)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Failed to list credentials: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch credentials"})
 		return
 	}
 	defer rows.Close()
@@ -43,7 +44,8 @@ func (h *CredentialHandler) ListCredentials(c *gin.Context) {
 	for rows.Next() {
 		var cr CredentialResponse
 		if err := rows.Scan(&cr.ID, &cr.Name, &cr.Username, &cr.Notes, &cr.CreatedAt, &cr.UpdatedAt); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			log.Printf("Failed to scan credential: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process database records"})
 			return
 		}
 		creds = append(creds, cr)
@@ -84,7 +86,8 @@ func (h *CredentialHandler) CreateCredential(c *gin.Context) {
 	`, req.Name, req.Username, encrypted, req.Notes).Scan(&id)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Failed to create credential: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save credential to database"})
 		return
 	}
 
@@ -111,7 +114,8 @@ func (h *CredentialHandler) UpdateCredential(c *gin.Context) {
 	`, req.Name, req.Username, encrypted, req.Notes, id)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Failed to update credential %s: %v", id, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update internal record"})
 		return
 	}
 
@@ -133,18 +137,20 @@ func (h *CredentialHandler) DeleteCredential(c *gin.Context) {
 	`, id).Scan(&count)
 	
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Failed to check credential usage %s: %v", id, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to verify credential status before deletion"})
 		return
 	}
 	
 	if count > 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Credential is still in use by %d network jobs", count)})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Credential is still in use by active network jobs and cannot be deleted"})
 		return
 	}
 
 	tag, err := h.db.Exec(c.Request.Context(), "DELETE FROM M_CREDENTIALS WHERE m_credential_id=$1", id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Failed to delete credential %s: %v", id, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Deletion command failed"})
 		return
 	}
 

@@ -10,12 +10,12 @@ import withReactContent from "sweetalert2-react-content";
 
 const MySwal = withReactContent(Swal);
 const swalTheme = { 
-  background: '#FFFFFF', 
-  color: '#0F172A', 
+  background: 'var(--card)', 
+  color: 'var(--foreground)', 
   customClass: { 
-    popup: 'enterprise-card shadow-2xl border border-[#E2E8F0]', 
+    popup: 'enterprise-card shadow-2xl border border-border', 
     confirmButton: 'premium-button premium-button-primary px-6 py-2 ml-4',
-    cancelButton: 'premium-button bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] px-6 py-2'
+    cancelButton: 'premium-button bg-muted text-muted-foreground border border-border px-6 py-2'
   } 
 };
 
@@ -186,69 +186,69 @@ export default function SchemaEditPage() {
         <div className="flex items-center gap-5">
           <button 
             onClick={() => router.push("/dashboard/schema")}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-white border border-[#E2E8F0] shadow-sm text-[#64748B] hover:text-[#1E90FF] hover:border-[#1E90FF] transition-all"
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-card border border-border shadow-sm text-muted-foreground hover:text-primary hover:border-primary transition-all"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
             <div className="flex items-center gap-3 mb-1">
-               <div className="p-1.5 rounded-lg bg-[#1E90FF]/10 text-[#1E90FF]">
+               <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
                   <Database className="w-5 h-5" />
                </div>
-                <h1 className="text-2xl font-bold tracking-tight text-[#0F172A]">
+                <h1 className="text-2xl font-bold tracking-tight text-foreground">
                   {isView ? `View Schema: ${formData.name}` : (isNew ? "Create New Schema" : `Configure Schema: ${formData.name}`)}
                 </h1>
             </div>
-            <p className="text-[14px] font-medium text-[#64748B]">Define extract and load queries for synchronization pipeline.</p>
+            <p className="text-[14px] font-medium text-muted-foreground">Define extract and load queries for synchronization pipeline.</p>
           </div>
         </div>
       </div>
 
       <div className="space-y-8">
         {/* Core Settings */}
-        <div className="enterprise-card bg-white p-8 shadow-lg overflow-hidden relative">
-          <div className="absolute top-0 left-0 w-1.5 h-full bg-[#1E90FF]" />
+        <div className="enterprise-card bg-card border border-border p-8 shadow-lg overflow-hidden relative">
+          <div className="absolute top-0 left-0 w-1.5 h-full bg-primary" />
           <div className="grid gap-10 sm:grid-cols-2">
             <div className="space-y-6">
               <div className="space-y-2">
-                <label className="text-[11px] font-bold text-[#64748B] uppercase tracking-widest pl-1">Schema Name</label>
+                <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest pl-1">Schema Name</label>
                 <input 
                   value={formData.name} 
                   onChange={(e) => setFormData({...formData, name: e.target.value})} 
                   placeholder="e.g. MASTER_TRANS_LOG" 
                   disabled={isView}
-                  className="w-full h-11 px-4 rounded-lg border border-[#E2E8F0] bg-white text-sm font-bold text-[#0F172A] focus:border-[#1E90FF] focus:ring-4 focus:ring-[#1E90FF]/5 transition-all outline-none disabled:bg-[#F8FAFC] disabled:text-[#64748B]" 
+                  className="w-full h-11 px-4 rounded-lg border border-border bg-muted/50 text-sm font-bold text-foreground focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none disabled:bg-muted/30 disabled:text-muted-foreground" 
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[11px] font-bold text-[#64748B] uppercase tracking-widest pl-1">Schema Owner</label>
+                <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest pl-1">Schema Owner</label>
                 <input 
                   value={formData.owner} 
                   onChange={(e) => setFormData({...formData, owner: e.target.value})} 
-                  className="w-full sm:w-[350px] h-11 px-4 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] text-sm font-bold text-[#94A3B8] outline-none" 
+                  className="w-full sm:w-[350px] h-11 px-4 rounded-lg border border-border bg-muted/30 text-sm font-bold text-muted-foreground outline-none" 
                 />
               </div>
             </div>
             <div className="space-y-6">
               <div className="space-y-2">
-                <label className="text-[11px] font-bold text-[#64748B] uppercase tracking-widest pl-1">Description</label>
+                <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest pl-1">Description</label>
                 <input 
                   value={formData.description} 
                   onChange={(e) => setFormData({...formData, description: e.target.value})} 
                   disabled={isView}
                   placeholder="Short explanation of this schema's purpose" 
-                  className="w-full h-11 px-4 rounded-lg border border-[#E2E8F0] bg-white text-sm font-medium text-[#0F172A] focus:border-[#1E90FF] focus:ring-4 focus:ring-[#1E90FF]/5 transition-all outline-none disabled:bg-[#F8FAFC] disabled:text-[#64748B]" 
+                  className="w-full h-11 px-4 rounded-lg border border-border bg-muted/50 text-sm font-medium text-foreground focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none disabled:bg-muted/30 disabled:text-muted-foreground" 
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[11px] font-bold text-[#64748B] uppercase tracking-widest pl-1">Implementation Notes</label>
+                <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest pl-1">Implementation Notes</label>
                 <textarea 
                   rows={2} 
                   value={formData.notes} 
                   onChange={(e) => setFormData({...formData, notes: e.target.value})} 
                   disabled={isView}
                   placeholder="Optional internal notes for administrators" 
-                  className="w-full p-4 rounded-lg border border-[#E2E8F0] bg-white text-sm font-medium text-[#0F172A] focus:border-[#1E90FF] focus:ring-4 focus:ring-[#1E90FF]/5 transition-all outline-none resize-none disabled:bg-[#F8FAFC] disabled:text-[#64748B]" 
+                  className="w-full p-4 rounded-lg border border-border bg-muted/50 text-sm font-medium text-foreground focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none resize-none disabled:bg-muted/30 disabled:text-muted-foreground" 
                 />
               </div>
             </div>
@@ -256,45 +256,45 @@ export default function SchemaEditPage() {
         </div>
 
         {/* Query Definitions */}
-        <div className="enterprise-card flex flex-col bg-white border border-[#E2E8F0] overflow-hidden shadow-xl">
-          <div className="p-6 border-b border-[#E2E8F0] bg-[#F8FAFC]/50 flex items-center justify-between">
+        <div className="enterprise-card flex flex-col bg-card border border-border overflow-hidden shadow-xl">
+          <div className="p-6 border-b border-border bg-muted/20 flex items-center justify-between">
             <div className="flex items-center gap-3">
-               <h2 className="text-[14px] font-bold text-[#0F172A] uppercase tracking-wide">Sync Transformation Rules</h2>
-               <div className="px-3 py-1 rounded-full bg-[#1E90FF] text-[10px] font-bold text-white shadow-sm">{queries.length} RULES</div>
+               <h2 className="text-[14px] font-bold text-foreground uppercase tracking-wide">Sync Transformation Rules</h2>
+               <div className="px-3 py-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground shadow-sm">{queries.length} RULES</div>
             </div>
             {!isView && (
               <button 
                 onClick={addQuery} 
-                className="h-10 px-6 rounded-lg bg-white border border-[#1E90FF] text-[#1E90FF] hover:bg-[#1E90FF] hover:text-white text-[11px] font-bold transition-all flex items-center gap-2 active:scale-[0.98]"
+                className="h-10 px-6 rounded-lg bg-card border border-primary text-primary hover:bg-primary hover:text-white text-[11px] font-bold transition-all flex items-center gap-2 active:scale-[0.98]"
               >
                 <Plus className="w-4 h-4" /> Add Extraction Rule
               </button>
             )}
           </div>
 
-          <div className="p-8 space-y-6 bg-white min-h-[200px]">
+          <div className="p-8 space-y-6 bg-card min-h-[200px]">
             {queries.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-16 text-[#94A3B8]">
+              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                 <Database className="w-12 h-12 mb-4 opacity-20" />
                 <p className="font-medium text-[15px]">No query rules defined for this schema.</p>
-                <button onClick={addQuery} className="mt-4 text-[#1E90FF] font-bold hover:underline text-sm uppercase tracking-widest">Connect First Rule Now</button>
+                <button onClick={addQuery} className="mt-4 text-primary font-bold hover:underline text-sm uppercase tracking-widest">Connect First Rule Now</button>
               </div>
             )}
             
             {queries.map((q, idx) => (
-              <div key={q.id} className="group relative border border-[#E2E8F0] rounded-xl bg-white overflow-hidden transition-all hover:border-[#1E90FF] hover:shadow-lg shadow-sm">
-                <div className="absolute left-0 top-0 bottom-0 w-10 flex flex-col items-center py-5 bg-[#F8FAFC] border-r border-[#E2E8F0] transition-colors group-hover:bg-[#1E90FF]/5">
+              <div key={q.id} className="group relative border border-border rounded-xl bg-card overflow-hidden transition-all hover:border-primary hover:shadow-lg shadow-sm">
+                <div className="absolute left-0 top-0 bottom-0 w-10 flex flex-col items-center py-5 bg-muted/20 border-r border-border transition-colors group-hover:bg-primary/5">
                   <GripVertical className="w-4 h-4 text-[#94A3B8] cursor-grab mb-auto" />
-                  <span className="text-[12px] font-bold text-[#0F172A]">{idx+1}</span>
-                  {!isView && <button onClick={() => removeQuery(q.id)} className="mt-auto p-2 text-[#94A3B8] hover:text-[#EF4444] transition-all"><Trash2 className="w-4.5 h-4.5" /></button>}
+                  <span className="text-[12px] font-bold text-foreground">{idx+1}</span>
+                  {!isView && <button onClick={() => removeQuery(q.id)} className="mt-auto p-2 text-muted-foreground hover:text-red-500 transition-all"><Trash2 className="w-4.5 h-4.5" /></button>}
                 </div>
 
                 <div className="pl-14 pr-8 py-8">
                   <div className="grid lg:grid-cols-[1.8fr_1fr_2fr] gap-10">
                     <div className="space-y-4">
-                      <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest flex items-center justify-between">
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center justify-between">
                         Source Extraction Query
-                        <span className="text-[#1E90FF] font-mono text-[9px] bg-[#1E90FF]/10 px-2 py-0.5 rounded-full">SOURCE SQL</span>
+                        <span className="text-primary font-mono text-[9px] bg-primary/10 px-2 py-0.5 rounded-full">SOURCE SQL</span>
                       </label>
                       <textarea 
                         value={q.source_query} 
@@ -302,53 +302,53 @@ export default function SchemaEditPage() {
                         rows={6} 
                         disabled={isView}
                         placeholder="SELECT col1, col2 FROM table WHERE ..." 
-                        className="w-full p-4 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] font-mono text-[13px] text-[#0F172A] focus:border-[#1E90FF] focus:bg-white transition-all outline-none resize-none shadow-inner disabled:opacity-70" 
+                        className="w-full p-4 rounded-lg border border-border bg-muted/30 font-mono text-[13px] text-foreground focus:border-primary focus:bg-muted/50 transition-all outline-none resize-none shadow-inner disabled:opacity-70" 
                       />
                     </div>
 
                     <div className="space-y-6">
                       <div className="space-y-3">
-                        <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest">Target Destination</label>
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Target Destination</label>
                         <div className="relative">
-                          <Database className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#94A3B8]" />
+                          <Database className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                           <input 
                             value={q.target_table} 
                             onChange={(e) => updateQuery(q.id, 'target_table', e.target.value)} 
                             disabled={isView}
                             placeholder="table_name" 
-                            className="w-full h-11 pl-9 pr-4 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] font-mono text-[13px] font-bold text-[#0F172A] focus:border-[#1E90FF] focus:bg-white outline-none transition-all disabled:opacity-70" 
+                            className="w-full h-11 pl-9 pr-4 rounded-lg border border-border bg-muted/30 font-mono text-[13px] font-bold text-foreground focus:border-primary focus:bg-muted/50 outline-none transition-all disabled:opacity-70" 
                           />
                         </div>
                       </div>
                       
                       <div className="space-y-3">
-                        <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest">Buffer Size (Rows)</label>
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Buffer Size (Rows)</label>
                         <input 
                           type="number"
                           value={q.batch_size} 
                           onChange={(e) => updateQuery(q.id, 'batch_size', e.target.value)} 
                           disabled={isView}
-                          className="w-full h-11 px-4 rounded-lg border border-[#E2E8F0] bg-white text-sm font-bold text-[#0F172A] focus:border-[#1E90FF] focus:ring-4 focus:ring-[#1E90FF]/5 outline-none transition-all disabled:bg-[#F8FAFC]" 
+                          className="w-full h-11 px-4 rounded-lg border border-border bg-muted/50 text-sm font-bold text-foreground focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all disabled:bg-muted/30" 
                         />
                       </div>
 
-                      <div className="flex items-center gap-4 py-4 px-5 rounded-lg bg-[#FFF5F5] border border-[#FEE2E2]">
+                      <div className="flex items-center gap-4 py-4 px-5 rounded-lg bg-red-500/10 border border-red-500/20">
                         <label className="relative inline-flex items-center cursor-pointer">
                           <input type="checkbox" disabled={isView || q.sync_method === 'INCREMENTAL'} checked={q.truncate_before} onChange={(e) => updateQuery(q.id, 'truncate_before', e.target.checked)} className="sr-only peer" />
-                          <div className="w-10 h-5.5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-[#EF4444] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all shadow-inner"></div>
+                          <div className="w-10 h-5.5 bg-muted border border-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-red-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all shadow-inner"></div>
                         </label>
-                        <span className={`text-[11px] font-bold uppercase tracking-wide ${q.sync_method === 'INCREMENTAL' ? 'text-slate-400' : 'text-[#EF4444]'}`}>Truncate Target</span>
+                        <span className={`text-[11px] font-bold uppercase tracking-wide ${q.sync_method === 'INCREMENTAL' ? 'text-muted-foreground' : 'text-red-500'}`}>Truncate Target</span>
                       </div>
                     </div>
 
                     <div className="space-y-6">
                       <div className="space-y-3">
-                        <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest">Sync Strategy</label>
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Sync Strategy</label>
                         <select 
                           value={q.sync_method} 
                           onChange={(e) => updateQuery(q.id, 'sync_method', e.target.value)}
                           disabled={isView}
-                          className="w-full h-11 px-4 rounded-lg border border-[#E2E8F0] bg-white text-sm font-bold text-[#1E90FF] focus:border-[#1E90FF] outline-none transition-all"
+                          className="w-full h-11 px-4 rounded-lg border border-border bg-muted/50 text-sm font-bold text-primary focus:border-primary outline-none transition-all"
                         >
                           <option value="INSERT">Standard Insert (Append)</option>
                           <option value="UPSERT">Smart Upsert (Update Existing)</option>
@@ -358,30 +358,30 @@ export default function SchemaEditPage() {
 
                       {q.sync_method === 'UPSERT' && (
                         <div className="space-y-3 animate-in slide-in-from-left-2 duration-200">
-                          <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest flex items-center gap-2">
-                             Upsert Unique Keys <span className="text-[9px] text-[#1E90FF] normal-case">(Comma separated)</span>
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                             Upsert Unique Keys <span className="text-[9px] text-primary normal-case">(Comma separated)</span>
                           </label>
                           <input 
                             value={q.upsert_keys} 
                             onChange={(e) => updateQuery(q.id, 'upsert_keys', e.target.value)}
                             disabled={isView}
                             placeholder="e.g. id, record_code" 
-                            className="w-full h-11 px-4 rounded-lg border border-[#E2E8F0] bg-blue-50/30 font-mono text-[13px] text-[#0F172A] focus:border-[#1E90FF] outline-none" 
+                            className="w-full h-11 px-4 rounded-lg border border-border bg-primary/10 font-mono text-[13px] text-foreground focus:border-primary outline-none" 
                           />
                         </div>
                       )}
 
                       {q.sync_method === 'INCREMENTAL' && (
                         <div className="space-y-3 animate-in slide-in-from-left-2 duration-200">
-                          <label className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest flex items-center gap-2">
-                             Progress Column <span className="text-[9px] text-[#1E90FF] normal-case">(Must be monotonic)</span>
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                             Progress Column <span className="text-[9px] text-primary normal-case">(Must be monotonic)</span>
                           </label>
                           <input 
                             value={q.incremental_column} 
                             onChange={(e) => updateQuery(q.id, 'incremental_column', e.target.value)}
                             disabled={isView}
                             placeholder="e.g. updated_at" 
-                            className="w-full h-11 px-4 rounded-lg border border-[#E2E8F0] bg-blue-50/30 font-mono text-[13px] text-[#0F172A] focus:border-[#1E90FF] outline-none" 
+                            className="w-full h-11 px-4 rounded-lg border border-border bg-primary/10 font-mono text-[13px] text-foreground focus:border-primary outline-none" 
                           />
                         </div>
                       )}
@@ -390,22 +390,22 @@ export default function SchemaEditPage() {
                     <div className="grid grid-cols-2 gap-8">
                       <div className="space-y-4">
                         <div className="space-y-2">
-                           <label className="text-[9px] font-bold text-[#64748B] uppercase tracking-widest">Extract Pre-Query</label>
-                           <textarea rows={2} disabled={isView} value={q.extract_pre_query} onChange={(e) => updateQuery(q.id, 'extract_pre_query', e.target.value)} className="w-full p-3 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] font-mono text-[11px] text-[#0F172A] outline-none disabled:opacity-50" placeholder="None" />
+                           <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Extract Pre-Query</label>
+                           <textarea rows={2} disabled={isView} value={q.extract_pre_query} onChange={(e) => updateQuery(q.id, 'extract_pre_query', e.target.value)} className="w-full p-3 rounded-lg border border-border bg-muted/30 font-mono text-[11px] text-foreground focus:border-primary outline-none disabled:opacity-50" placeholder="None" />
                         </div>
                         <div className="space-y-2">
-                           <label className="text-[9px] font-bold text-[#64748B] uppercase tracking-widest">Extract Post-Query</label>
-                           <textarea rows={2} disabled={isView} value={q.extract_post_query} onChange={(e) => updateQuery(q.id, 'extract_post_query', e.target.value)} className="w-full p-3 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] font-mono text-[11px] text-[#0F172A] outline-none disabled:opacity-50" placeholder="None" />
+                           <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Extract Post-Query</label>
+                           <textarea rows={2} disabled={isView} value={q.extract_post_query} onChange={(e) => updateQuery(q.id, 'extract_post_query', e.target.value)} className="w-full p-3 rounded-lg border border-border bg-muted/30 font-mono text-[11px] text-foreground focus:border-primary outline-none disabled:opacity-50" placeholder="None" />
                         </div>
                       </div>
                       <div className="space-y-4">
                         <div className="space-y-2">
-                           <label className="text-[9px] font-bold text-[#64748B] uppercase tracking-widest">Upload Pre-Query</label>
-                           <textarea rows={2} disabled={isView} value={q.upload_pre_query} onChange={(e) => updateQuery(q.id, 'upload_pre_query', e.target.value)} className="w-full p-3 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] font-mono text-[11px] text-[#0F172A] outline-none disabled:opacity-50" placeholder="None" />
+                           <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Upload Pre-Query</label>
+                           <textarea rows={2} disabled={isView} value={q.upload_pre_query} onChange={(e) => updateQuery(q.id, 'upload_pre_query', e.target.value)} className="w-full p-3 rounded-lg border border-border bg-muted/30 font-mono text-[11px] text-foreground focus:border-primary outline-none disabled:opacity-50" placeholder="None" />
                         </div>
                         <div className="space-y-2">
-                           <label className="text-[9px] font-bold text-[#64748B] uppercase tracking-widest">Upload Post-Query</label>
-                           <textarea rows={2} disabled={isView} value={q.upload_post_query} onChange={(e) => updateQuery(q.id, 'upload_post_query', e.target.value)} className="w-full p-3 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] font-mono text-[11px] text-[#0F172A] outline-none disabled:opacity-50" placeholder="None" />
+                           <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Upload Post-Query</label>
+                           <textarea rows={2} disabled={isView} value={q.upload_post_query} onChange={(e) => updateQuery(q.id, 'upload_post_query', e.target.value)} className="w-full p-3 rounded-lg border border-border bg-muted/30 font-mono text-[11px] text-foreground focus:border-primary outline-none disabled:opacity-50" placeholder="None" />
                         </div>
                       </div>
                     </div>
@@ -417,10 +417,10 @@ export default function SchemaEditPage() {
         </div>
 
         {/* Action Bar */}
-        <div className="flex items-center justify-between py-6 px-10 border border-[#E2E8F0] rounded-xl bg-[#F8FAFC]">
+        <div className="flex items-center justify-between py-6 px-10 border border-border rounded-xl bg-card">
           <button 
             onClick={() => router.push("/dashboard/schema")} 
-            className="h-11 px-8 rounded-lg border border-[#E2E8F0] bg-white text-[11px] font-bold text-[#64748B] uppercase tracking-widest hover:bg-zinc-50 transition-all active:scale-[0.98]"
+            className="h-11 px-8 rounded-lg border border-border bg-card text-[11px] font-bold text-muted-foreground uppercase tracking-widest hover:bg-muted transition-all active:scale-[0.98]"
           >
             <X className="w-4 h-4 inline mr-2" /> {isView ? 'Close View' : 'Discard Changes'}
           </button>
@@ -428,9 +428,9 @@ export default function SchemaEditPage() {
             <button 
               onClick={handleSave} 
               disabled={saveMutation.isPending} 
-              className="h-11 px-10 rounded-lg bg-[#1E90FF] text-white text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-[#1E90FF]/20 hover:bg-[#1c86ee] transition-all active:scale-[0.98] disabled:opacity-50"
+              className="h-11 px-10 rounded-lg bg-primary text-primary-foreground text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-50"
             >
-              <Save className="w-4 h-4 inline mr-2" /> {saveMutation.isPending ? 'Syncing Schema...' : 'Commit Schema Definition'}
+              <Save className="w-4 h-4 inline mr-2" /> {saveMutation.isPending ? 'Saving Configuration...' : 'Save Configuration'}
             </button>
           )}
         </div>

@@ -10,23 +10,33 @@ import (
 	"github.com/bintang/remake-dsp-backend/internal/config"
 )
 
+const cookieName = "sync_go_token"
+
 func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		var tokenString string
+
+		// 1. Try Authorization header first (for API clients / backward compatibility)
 		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is required"})
-			c.Abort()
-			return
+		if authHeader != "" {
+			parts := strings.SplitN(authHeader, " ", 2)
+			if len(parts) != 2 || parts[0] != "Bearer" {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header format must be Bearer {token}"})
+				c.Abort()
+				return
+			}
+			tokenString = parts[1]
+		} else {
+			// 2. Try HttpOnly cookie (primary method for browser clients)
+			cookie, err := c.Cookie(cookieName)
+			if err != nil || cookie == "" {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication required"})
+				c.Abort()
+				return
+			}
+			tokenString = cookie
 		}
 
-		parts := strings.SplitN(authHeader, " ", 2)
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header format must be Bearer {token}"})
-			c.Abort()
-			return
-		}
-
-		tokenString := parts[1]
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -35,7 +45,7 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 		})
 
 		if err != nil || !token.Valid {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			c.Abort()
 			return
 		}
@@ -45,7 +55,8 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 			if role, exists := claims["role"]; exists {
 				c.Set("userRole", role)
 			} else {
-				c.Set("userRole", "admin") // default fallback if missing
+				// SECURITY FIX: Default to least-privileged role, not admin
+				c.Set("userRole", "viewer")
 			}
 		}
 
