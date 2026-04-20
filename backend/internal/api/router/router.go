@@ -30,9 +30,19 @@ func SetupRouter(db *pgxpool.Pool, cfg *config.Config) *gin.Engine {
 
 	r.Use(func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
-		if allowedOrigins[origin] {
-			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
+		
+		// If origin is empty (same-origin or non-browser request) or explicitly allowed
+		if origin == "" || allowedOrigins[origin] {
+			if origin != "" {
+				c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
+			} else {
+				// For proxy setups, we can echo the host or just allow * if no credentials needed,
+				// but since we use same-origin proxy, the browser often doesn't send Origin for same-site GETs.
+				// For POSTs with credentials, we set it to the origin if we trust it.
+				c.Writer.Header().Set("Access-Control-Allow-Origin", c.Request.Header.Get("Host"))
+			}
 		}
+		
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
