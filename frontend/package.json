@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:https": "next dev --experimental-https --experimental-https-key=../certs/server.key --experimental-https-cert=../certs/server.crt",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -22,6 +23,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-hook-form": "^7.72.1",
+    "recharts": "^3.8.1",
     "shadcn": "^4.2.0",
     "sweetalert2": "^11.26.24",
     "sweetalert2-react-content": "^5.1.2",

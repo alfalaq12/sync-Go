@@ -1,0 +1,29 @@
+FROM golang:1.25-alpine AS builder
+
+WORKDIR /app
+
+# Copy go mod and sum files
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy the source
+COPY . .
+
+# Build the Agent
+RUN CGO_ENABLED=0 GOOS=linux go build -o agent ./cmd/agent/main.go
+
+# Production stage
+FROM alpine:latest  
+
+WORKDIR /app
+
+# Install ca-certificates in case we need them for external DBs
+RUN apk --no-cache add ca-certificates
+
+# Copy the binary
+COPY --from=builder /app/agent .
+
+# The agent doesn't expose ports as it connects to the Master
+# But we can expose a health check port if implemented in the future
+
+ENTRYPOINT ["./agent"]

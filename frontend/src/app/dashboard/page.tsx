@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchNodes, fetchJobs } from "@/lib/api";
 import { Server, Activity, Database, CheckCircle2, ChevronRight, Layers, ArrowUpRight, Search, Monitor } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DashboardCharts } from "@/components/remake/DashboardCharts";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -41,6 +42,17 @@ export default function DashboardPage() {
   const totalJobs = jobsData?.total || 0;
   const runningJobs = jobsData?.data?.filter((j: any) => j.status === "running").length || 0;
 
+  // Calculate total volume (rows processed)
+  const totalRowsUploaded = jobsData?.data?.reduce((sum: number, job: any) => sum + (job.rows_uploaded || 0), 0) || 0;
+  
+  // Format volume: 1 row ≈ 1 KB (approx)
+  const formatVolume = (rows: number) => {
+    const kb = rows; 
+    if (kb >= 1024 * 1024) return `${(kb / (1024 * 1024)).toFixed(1)} GB`;
+    if (kb >= 1024) return `${(kb / 1024).toFixed(1)} MB`;
+    return `${rows} rows`;
+  };
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -69,11 +81,11 @@ export default function DashboardPage() {
         />
         <StatCard
           label="DATA VOLUME"
-          value="0 B"
-          sub="No synchronized data yet"
+          value={formatVolume(totalRowsUploaded)}
+          sub={totalRowsUploaded > 0 ? "Throughput volume (EST)" : "No synchronized data yet"}
           icon={Database}
           color="#00C6AD" // Teal
-          percentage={0}
+          percentage={totalRowsUploaded > 0 ? 100 : 0} // Placeholder fixed percentage if active
         />
         <StatCard
           label="SYSTEM UPTIME"
@@ -84,6 +96,9 @@ export default function DashboardPage() {
           percentage={100}
         />
       </div>
+
+      {/* Analytics Charts */}
+      <DashboardCharts />
 
       <div className="grid gap-6 grid-cols-1">
         {/* Registered Nodes Table */}

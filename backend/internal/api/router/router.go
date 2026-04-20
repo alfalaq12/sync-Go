@@ -66,6 +66,7 @@ func SetupRouter(db *pgxpool.Pool, cfg *config.Config) *gin.Engine {
 	logHandler := handlers.NewLogHandler(db)
 	credentialHandler := handlers.NewCredentialHandler(db)
 	userHandler := handlers.NewUserHandler(db)
+	statsHandler := handlers.NewStatsHandler(db)
 
 	// Public routes
 	public := r.Group("/api/v1")
@@ -145,6 +146,10 @@ func SetupRouter(db *pgxpool.Pool, cfg *config.Config) *gin.Engine {
 		protected.POST("/policies", userHandler.CreatePolicy)
 		protected.PUT("/policies/:id", userHandler.UpdatePolicy)
 		protected.DELETE("/policies/:id", userHandler.DeletePolicy)
+
+		// Stats
+		protected.GET("/stats/metrics", statsHandler.GetMetrics)
+		protected.GET("/stats/volume", statsHandler.GetVolumeStats)
 	}
 
 	return r

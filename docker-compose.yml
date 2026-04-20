@@ -29,13 +29,17 @@ services:
       - GRPC_PORT=9090
       - DATABASE_URL=postgres://postgres:B1ntang12!!@db:5432/dsp?sslmode=disable
       - JWT_SECRET=supersecret-dsp-key-change-in-production
-    # Backend is now internal only, accessed via Nginx
-    # ports:
-    #   - "8080:8080"
-    #   - "9090:9090"
+      - TLS_ENABLED=true
+      - TLS_CA_PATH=/app/certs/ca.crt
+      - TLS_CERT_PATH=/app/certs/server.crt
+      - TLS_KEY_PATH=/app/certs/server.key
+    volumes:
+      - ./certs:/app/certs:ro
     depends_on:
       db:
         condition: service_healthy
+      cert-gen:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   frontend:
@@ -47,20 +51,57 @@ services:
     container_name: syncgo-frontend
     environment:
       - NEXT_PUBLIC_API_URL=/api/v1
-    # Frontend is now internal only, accessed via Nginx
-    # ports:
-    #   - "3000:3000"
     depends_on:
       - backend
     restart: unless-stopped
+
+  agent:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.agent
+    container_name: syncgo-agent
+    environment:
+      - TOKEN=agent-secret-123
+      - NODE_CODE=DOCKER_AGENT_01
+      - MASTER_ADDR=backend:9090
+      - TLS_ENABLED=true
+      - TLS_CA_PATH=/app/certs/ca.crt
+      - TLS_CERT_PATH=/app/certs/client.crt
+      - TLS_KEY_PATH=/app/certs/client.key
+      - DB_DRIVER=postgres
+      - DB_URL=postgres://postgres:B1ntang12!!@db:5432/dsp?sslmode=disable
+    volumes:
+      - ./certs:/app/certs:ro
+    depends_on:
+      backend:
+        condition: service_started
+      cert-gen:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  cert-gen:
+    image: golang:1.25-alpine
+    container_name: syncgo-cert-gen
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: >
+      sh -c "if [ ! -f certs/ca.crt ]; then
+               echo 'Generating certificates...';
+               go run scripts/gen_certs.go;
+             else
+               echo 'Certificates already exist.';
+             fi"
 
   nginx:
     image: nginx:alpine
     container_name: syncgo-proxy
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certs:/etc/nginx/certs:ro
     depends_on:
       - frontend
       - backend

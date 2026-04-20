@@ -203,6 +203,17 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool) {
 			created_at TIMESTAMP DEFAULT NOW()
 		)`,
 
+		// System Metrics - S_METRICS
+		`CREATE TABLE IF NOT EXISTS S_METRICS (
+			id SERIAL PRIMARY KEY,
+			metric_type VARCHAR(50) NOT NULL, -- master_cpu, master_ram, sync_volume
+			value DOUBLE PRECISION DEFAULT 0,
+			recorded_at TIMESTAMP DEFAULT NOW()
+		)`,
+
+		// Indexes for metrics
+		`CREATE INDEX IF NOT EXISTS idx_metrics_type_time ON S_METRICS(metric_type, recorded_at)`,
+
 		// Set sequences to start at 1000 for legacy compatibility
 		`ALTER SEQUENCE IF EXISTS S_USERS_id_seq RESTART WITH 1000`,
 		`ALTER SEQUENCE IF EXISTS M_NODE_m_node_id_seq RESTART WITH 1000`,

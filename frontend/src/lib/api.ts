@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://localhost:8080/api/v1";
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -101,5 +101,9 @@ export const fetchPolicies = () => api.get("/policies").then((r) => r.data);
 export const createPolicy = (data: any) => api.post("/policies", data).then((r) => r.data);
 export const updatePolicy = (id: string, data: any) => api.put(`/policies/${id}`, data).then((r) => r.data);
 export const deletePolicy = (id: string) => api.delete(`/policies/${id}`).then((r) => r.data);
+
+// ─── Stats ───────────────────────────────────────────────
+export const fetchMetrics = (range = "24h") => api.get(`/stats/metrics?range=${range}`).then((r) => r.data);
+export const fetchVolumeHistory = (range = "30d") => api.get(`/stats/volume?range=${range}`).then((r) => r.data);
 
 export default api;

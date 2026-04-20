@@ -11,6 +11,7 @@ import (
 	"github.com/bintang/remake-dsp-backend/internal/db"
 	"github.com/bintang/remake-dsp-backend/internal/grpc"
 	"github.com/bintang/remake-dsp-backend/internal/syncengine"
+	"github.com/bintang/remake-dsp-backend/internal/metrics"
 )
 
 func main() {
@@ -42,11 +43,24 @@ func main() {
 	scheduler := syncengine.NewScheduler(pool, engine)
 	go scheduler.Start(ctx)
 
-	// Start gRPC Server for Master-Agent communication
-	go grpc.StartGRPCServer(cfg.GRPCPort, pool, agentManager)
+	// Start gRPC Server for Master-Agent coordination
+	go grpc.StartGRPCServer(cfg, pool, agentManager)
+
+	// Start Metrics Collector (if DB is available)
+	if pool != nil {
+		collector := metrics.NewCollector(pool)
+		go collector.Start(ctx)
+	}
 
 	log.Printf("Starting HTTP Dashboard server on port %s", cfg.Port)
-	if err := r.Run(":" + cfg.Port); err != nil {
-		log.Fatalf("Server failed: %v", err)
+	if cfg.TLSEnabled {
+		log.Printf("TLS is enabled. Serving over HTTPS...")
+		if err := r.RunTLS(":"+cfg.Port, cfg.TLSCertPath, cfg.TLSKeyPath); err != nil {
+			log.Fatalf("Server failed to start with TLS: %v", err)
+		}
+	} else {
+		if err := r.Run(":" + cfg.Port); err != nil {
+			log.Fatalf("Server failed: %v", err)
+		}
 	}
 }

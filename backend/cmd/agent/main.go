@@ -6,13 +6,16 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"crypto/tls"
+	"crypto/x509"
+	"io/ioutil"
 	"log"
 	"time"
 
 	"github.com/bintang/remake-dsp-backend/internal/agent/proto"
 	"github.com/bintang/remake-dsp-backend/internal/drivers"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/credentials"
 )
 
 type AgentConfig struct {
@@ -20,7 +23,11 @@ type AgentConfig struct {
 	Token        string
 	NodeCode     string
 	LocalDriver  string
-	LocalDBURL   string
+	LocalDBURL  string
+	TLSEnabled  bool
+	TLSCACert   string
+	TLSClientCert string
+	TLSClientKey  string
 }
 
 var cfg AgentConfig
@@ -31,6 +38,10 @@ func main() {
 	flag.StringVar(&cfg.NodeCode, "node", "LOCAL_AGENT_01", "Unique Node Code")
 	flag.StringVar(&cfg.LocalDriver, "db-driver", "postgres", "Local DB Driver (postgres/mysql/mssql)")
 	flag.StringVar(&cfg.LocalDBURL, "db-url", "", "Local Connection String / DSN")
+	flag.BoolVar(&cfg.TLSEnabled, "tls", true, "Enable TLS")
+	flag.StringVar(&cfg.TLSCACert, "ca", "certs/ca.crt", "CA Certificate file")
+	flag.StringVar(&cfg.TLSClientCert, "cert", "certs/client.crt", "Client Certificate file")
+	flag.StringVar(&cfg.TLSClientKey, "key", "certs/client.key", "Client Key file")
 	flag.Parse()
 
 	if cfg.LocalDBURL == "" {
@@ -39,7 +50,42 @@ func main() {
 
 	log.Printf("Sync-Go Agent [%s] starting. Connecting to Master at %s...", cfg.NodeCode, cfg.MasterAddr)
 
-	conn, err := grpc.Dial(cfg.MasterAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	var dialOpts []grpc.DialOption
+
+	if cfg.TLSEnabled {
+		log.Printf("Loading TLS certificates for mTLS...")
+		// 1. Load Client Cert & Key
+		certificate, err := tls.LoadX509KeyPair(cfg.TLSClientCert, cfg.TLSClientKey)
+		if err != nil {
+			log.Fatalf("could not load client key pair: %s", err)
+		}
+
+		// 2. Load CA Cert for Server Verification
+		certPool := x509.NewCertPool()
+		ca, err := ioutil.ReadFile(cfg.TLSCACert)
+		if err != nil {
+			log.Fatalf("could not read ca certificate: %s", err)
+		}
+		if ok := certPool.AppendCertsFromPEM(ca); !ok {
+			log.Fatalf("failed to append ca certs")
+		}
+
+		tlsConfig := &tls.Config{
+			Certificates: []tls.Certificate{certificate},
+			RootCAs:      certPool,
+			// Since we use self-signed 'localhost', we might need this if using IP addresses
+			// InsecureSkipVerify: true, // Only if hostname doesn't match
+		}
+
+		dialOpts = append(dialOpts, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
+		log.Println("gRPC Agent TLS enabled (mTLS)")
+	} else {
+		log.Printf("WARNING: Connecting in INSECURE mode")
+		dialOpts = append(dialOpts, grpc.WithDefaultCallOptions()) // Placeholder
+		// Note: grpc.WithInsecure is deprecated, using insecure credentials instead if needed
+	}
+
+	conn, err := grpc.Dial(cfg.MasterAddr, dialOpts...)
 	if err != nil {
 		log.Fatalf("did not connect to master: %v", err)
 	}

@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRouter, usePathname } from "next/navigation";
-import { logout } from "@/lib/api";
 
 interface NavItem {
   title: string;
@@ -107,25 +106,6 @@ const menuData: NavItem[] = [
 export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [user, setUser] = useState("User");
-
-  React.useEffect(() => {
-    const storedUser = sessionStorage.getItem("auth_user");
-    if (storedUser) {
-      setUser(storedUser);
-    }
-  }, []);
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (err) {
-      console.error("Logout failed:", err);
-    }
-    // Always clear local state and redirect even if API call fails
-    sessionStorage.removeItem("auth_user");
-    router.push("/login");
-  };
 
   return (
     <>
@@ -158,25 +138,6 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
           <MenuGroup key={idx} group={group} pathname={pathname} />
         ))}
       </nav>
-
-      {/* Bottom User Profile */}
-      <div className="p-4 mt-auto border-t border-[#1a3a5c] dark:border-border/50 bg-[#0c1d36]/50 dark:bg-muted/10">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-             <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm ring-2 ring-[#0F2444] dark:ring-[#020617] shadow-inner">{user.charAt(0).toUpperCase()}</div>
-              <div className="min-w-0">
-                <p className="text-[13px] font-bold text-white tracking-wide truncate">{user}</p>
-              </div>
-          </div>
-          <button 
-            onClick={handleLogout}
-            title="Logout Session"
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#1a3a5c] dark:border-border/50 hover:border-red-500/50 hover:bg-red-500/10 text-[#94B8D8] hover:text-red-500 transition-all group"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
     </aside>
     </>
   );
