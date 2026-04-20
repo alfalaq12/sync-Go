@@ -7,13 +7,20 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"net/url"
 )
 
 type PostgresDriver struct{}
 
 func (d *PostgresDriver) getConnString(c ConnectionConfig) string {
-	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
-		c.Username, c.Password, c.Host, c.Port, c.Database)
+	u := url.URL{
+		Scheme: "postgres",
+		User:   url.UserPassword(c.Username, c.Password),
+		Host:   fmt.Sprintf("%s:%d", c.Host, c.Port),
+		Path:   c.Database,
+		RawQuery: "sslmode=disable",
+	}
+	return u.String()
 }
 
 func (d *PostgresDriver) TestConnection(ctx context.Context, c ConnectionConfig) error {

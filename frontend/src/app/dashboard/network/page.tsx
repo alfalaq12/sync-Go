@@ -112,16 +112,16 @@ export default function NetworkPage() {
           <div class="text-left space-y-3">
             <div class="p-3 rounded-lg border ${sourceRes.success ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-red-500/10 border-red-500/20'}">
               <p class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Source Connection</p>
-              <div class="flex items-center justify-between">
-                <span class="text-sm font-semibold">${sourceRes.message}</span>
-                <span class="text-[10px] font-mono">${sourceRes.latency || ''}</span>
+              <div class="flex items-center justify-between gap-4">
+                <span class="text-sm font-semibold truncate flex-1" title="${sourceRes.message}">${sourceRes.message}</span>
+                <span class="text-[11px] font-bold font-mono whitespace-nowrap flex-shrink-0 text-[#1E90FF]">${sourceRes.latency || ''}</span>
               </div>
             </div>
             <div class="p-3 rounded-lg border ${targetRes.success ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-red-500/10 border-red-500/20'}">
               <p class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Target Connection</p>
-              <div class="flex items-center justify-between">
-                <span class="text-sm font-semibold">${targetRes.message}</span>
-                <span class="text-[10px] font-mono">${targetRes.latency || ''}</span>
+              <div class="flex items-center justify-between gap-4">
+                <span class="text-sm font-semibold truncate flex-1" title="${targetRes.message}">${targetRes.message}</span>
+                <span class="text-[11px] font-bold font-mono whitespace-nowrap flex-shrink-0 text-secondary">${targetRes.latency || ''}</span>
               </div>
             </div>
           </div>

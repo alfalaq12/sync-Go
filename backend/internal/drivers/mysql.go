@@ -7,13 +7,14 @@ import (
 	"context"
 
 	_ "github.com/go-sql-driver/mysql"
+	"net/url"
 )
 
 type MySQLDriver struct{}
 
 func (d *MySQLDriver) getDSN(c ConnectionConfig) string {
 	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true",
-		c.Username, c.Password, c.Host, c.Port, c.Database)
+		url.QueryEscape(c.Username), url.QueryEscape(c.Password), c.Host, c.Port, c.Database)
 }
 
 func (d *MySQLDriver) TestConnection(ctx context.Context, c ConnectionConfig) error {
