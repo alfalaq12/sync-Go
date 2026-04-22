@@ -67,6 +67,7 @@ export default function JobsPage() {
 
   const doAction = async (action: () => Promise<any>, successMsg: string) => {
     try {
+      await action();
       MySwal.fire({ title: 'Success', text: successMsg, icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, ...swalTheme });
     } catch (err: any) {
       MySwal.fire({ title: 'Execution Failed', text: err?.response?.data?.error || 'This action failed to execute.', icon: 'error', ...swalTheme });
