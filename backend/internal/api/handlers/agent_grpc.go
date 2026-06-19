@@ -24,6 +24,11 @@ func (s *AgentGRPCServer) Session(stream proto.SyncAgent_SessionServer) error {
 	}
 
 	// PROD SECURITY: Verify agent_token and node_code against DB. Auto-register if not exists.
+	if s.DB == nil {
+		log.Printf("Error: Database connection is nil. Cannot authenticate agent %s.", first.NodeCode)
+		return fmt.Errorf("backend database unavailable, cannot authenticate agent")
+	}
+
 	var dbToken string
 	err = s.DB.QueryRow(stream.Context(), "SELECT agent_token FROM M_NODE WHERE node_code = $1", first.NodeCode).Scan(&dbToken)
 	if err != nil {
