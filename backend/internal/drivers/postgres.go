@@ -2,12 +2,13 @@ package drivers
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
+	"net/url"
 	"strings"
-	"time"
 
 	"github.com/jackc/pgx/v5"
-	"net/url"
 )
 
 type PostgresDriver struct{}
@@ -72,7 +73,7 @@ func (d *PostgresDriver) Load(ctx context.Context, c ConnectionConfig, table str
 	defer conn.Close(ctx)
 
 	if truncate && table != "" {
-		_, err = conn.Exec(ctx, fmt.Sprintf("TRUNCATE TABLE %s CASCADE", pgx.Identifier{table}.Sanitize()))
+		_, err = conn.Exec(ctx, fmt.Sprintf("TRUNCATE TABLE %s CASCADE", parseIdentifier(table).Sanitize()))
 		if err != nil {
 			return 0, fmt.Errorf("truncate failed: %v", err)
 		}
@@ -185,7 +186,7 @@ func (d *PostgresDriver) StreamLoad(ctx context.Context, c ConnectionConfig, tab
 	if len(upsertKeys) == 0 {
 		copyCount, err := conn.CopyFrom(
 			ctx,
-			pgx.Identifier{table},
+			parseIdentifier(table),
 			columns,
 			pgx.CopyFromRows(chunk),
 		)
@@ -201,8 +202,16 @@ func (d *PostgresDriver) StreamLoad(ctx context.Context, c ConnectionConfig, tab
 	defer tx.Rollback(ctx)
 
 	// Temporary table for staging
-	tempTable := fmt.Sprintf("stg_%s_%d", table, time.Now().UnixNano()%10000)
-	sanitizedTable := pgx.Identifier{table}.Sanitize()
+	b := make([]byte, 4)
+	rand.Read(b)
+	randomSuffix := hex.EncodeToString(b)
+	
+	tablePart := table
+	if idx := strings.LastIndex(table, "."); idx != -1 {
+		tablePart = table[idx+1:]
+	}
+	tempTable := fmt.Sprintf("stg_%s_%s", tablePart, randomSuffix)
+	sanitizedTable := parseIdentifier(table).Sanitize()
 	sanitizedTemp := pgx.Identifier{tempTable}.Sanitize()
 
 	// 1. Create temp table with same schema as target
@@ -274,6 +283,14 @@ func (d *PostgresDriver) TruncateTarget(ctx context.Context, c ConnectionConfig,
 	}
 	defer conn.Close(ctx)
 
-	_, err = conn.Exec(ctx, fmt.Sprintf("TRUNCATE TABLE %s CASCADE", pgx.Identifier{table}.Sanitize()))
+	_, err = conn.Exec(ctx, fmt.Sprintf("TRUNCATE TABLE %s CASCADE", parseIdentifier(table).Sanitize()))
 	return err
+}
+
+func parseIdentifier(table string) pgx.Identifier {
+	parts := strings.Split(table, ".")
+	for i := range parts {
+		parts[i] = strings.TrimSpace(parts[i])
+	}
+	return pgx.Identifier(parts)
 }

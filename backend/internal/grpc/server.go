@@ -64,6 +64,7 @@ func StartGRPCServer(cfg *config.Config, db *pgxpool.Pool, manager *syncengine.A
 	// Register the new SyncAgent service
 	proto.RegisterSyncAgentServer(s, &handlers.AgentGRPCServer{
 		Manager: manager,
+		DB:      db,
 	})
 
 	// Start background worker to mark stale nodes as offline

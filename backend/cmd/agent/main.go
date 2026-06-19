@@ -10,6 +10,7 @@ import (
 	"crypto/x509"
 	"io/ioutil"
 	"log"
+	"os"
 	"time"
 
 	"github.com/bintang/remake-dsp-backend/internal/agent/proto"
@@ -44,6 +45,16 @@ func main() {
 	flag.StringVar(&cfg.TLSClientKey, "key", "certs/client.key", "Client Key file")
 	flag.Parse()
 
+	if val := os.Getenv("MASTER_ADDR"); val != "" { cfg.MasterAddr = val }
+	if val := os.Getenv("TOKEN"); val != "" { cfg.Token = val }
+	if val := os.Getenv("NODE_CODE"); val != "" { cfg.NodeCode = val }
+	if val := os.Getenv("DB_DRIVER"); val != "" { cfg.LocalDriver = val }
+	if val := os.Getenv("DB_URL"); val != "" { cfg.LocalDBURL = val }
+	if val := os.Getenv("TLS_ENABLED"); val == "true" { cfg.TLSEnabled = true } else if val == "false" { cfg.TLSEnabled = false }
+	if val := os.Getenv("TLS_CA_PATH"); val != "" { cfg.TLSCACert = val }
+	if val := os.Getenv("TLS_CERT_PATH"); val != "" { cfg.TLSClientCert = val }
+	if val := os.Getenv("TLS_KEY_PATH"); val != "" { cfg.TLSClientKey = val }
+
 	if cfg.LocalDBURL == "" {
 		log.Fatalf("Error: --db-url is required. Example: postgres://user:pass@localhost:5432/dbname")
 	}
@@ -73,8 +84,8 @@ func main() {
 		tlsConfig := &tls.Config{
 			Certificates: []tls.Certificate{certificate},
 			RootCAs:      certPool,
-			// Since we use self-signed 'localhost', we might need this if using IP addresses
-			// InsecureSkipVerify: true, // Only if hostname doesn't match
+			// Since we use self-signed 'localhost', we might need this if using IP addresses / tunnels
+			InsecureSkipVerify: true, // Only if hostname doesn't match
 		}
 
 		dialOpts = append(dialOpts, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
@@ -120,6 +131,28 @@ func runSession(client proto.SyncAgentClient, token, nodeCode string) error {
 	}
 
 	log.Printf("Agent registered successfully. Local Driver: %s. Waiting for commands...", cfg.LocalDriver)
+
+	// Start background heartbeat sender to prevent tunnel timeout and keep database status online
+	go func() {
+		ticker := time.NewTicker(8 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-stream.Context().Done():
+				return
+			case <-ticker.C:
+				err := stream.Send(&proto.Heartbeat{
+					AgentToken: token,
+					NodeCode:   nodeCode,
+					Status:     "online",
+				})
+				if err != nil {
+					log.Printf("Failed to send heartbeat: %v", err)
+					return
+				}
+			}
+		}
+	}()
 
 	// 2. Listen for commands
 	for {

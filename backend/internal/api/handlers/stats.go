@@ -32,17 +32,21 @@ func (h *StatsHandler) GetMetrics(c *gin.Context) {
 	
 	var interval string
 	var limit int
+	var timeFormat string
 	
 	switch timeRange {
 	case "7d":
 		interval = "4 hours"
 		limit = 42 // (7 * 24) / 4
+		timeFormat = "DD/MM HH24:MI"
 	case "30d":
 		interval = "1 day"
 		limit = 30
+		timeFormat = "DD/MM"
 	default: // 24h
 		interval = "15 minutes"
 		limit = 96 // (24 * 60) / 15
+		timeFormat = "HH24:MI"
 	}
 
 	// Query for CPU and RAM grouped by interval
@@ -55,7 +59,7 @@ func (h *StatsHandler) GetMetrics(c *gin.Context) {
 			) AS slot
 		)
 		SELECT 
-			TO_CHAR(ts.slot, 'HH24:MI') as time_label,
+			TO_CHAR(ts.slot, '%s') as time_label,
 			COALESCE(AVG(CASE WHEN m.metric_type = 'master_cpu' THEN m.value END), 0) as cpu,
 			COALESCE(AVG(CASE WHEN m.metric_type = 'master_ram' THEN m.value END), 0) as ram
 		FROM time_slots ts
@@ -63,7 +67,7 @@ func (h *StatsHandler) GetMetrics(c *gin.Context) {
 		GROUP BY ts.slot
 		ORDER BY ts.slot ASC
 		LIMIT %d
-	`, timeRange, interval, interval, limit)
+	`, timeRange, interval, timeFormat, interval, limit)
 
 	rows, err := h.db.Query(c.Request.Context(), query)
 	if err != nil {

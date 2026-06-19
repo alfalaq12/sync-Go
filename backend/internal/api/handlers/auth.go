@@ -96,7 +96,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		int(tokenExpiry.Seconds()),     // maxAge (2 hours)
 		"/",                            // path
 		"",                             // domain (auto)
-		true,                           // secure — hardened for HTTPS
+		h.cfg.TLSEnabled,               // secure — dynamic based on TLS config
 		true,                           // httpOnly — this is the key security improvement
 	)
 
@@ -111,6 +111,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // Logout clears the auth cookie
 func (h *AuthHandler) Logout(c *gin.Context) {
 	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie(cookieName, "", -1, "/", "", true, true)
+	c.SetCookie(cookieName, "", -1, "/", "", h.cfg.TLSEnabled, true)
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
 }

@@ -5,7 +5,7 @@ import {
   User, Users, Shield, ShieldAlert, Key, 
   Settings, Server, FileText, Bell, Download, Monitor, Webhook, Play, Globe,
   LayoutGrid, Database, Share2, Activity, Terminal, Code2, Cpu, ChevronDown, ChevronRight, LogOut,
-  ChevronLeft
+  ChevronLeft, Search
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRouter, usePathname } from "next/navigation";
@@ -30,11 +30,11 @@ const menuData: NavItem[] = [
     title: "USER",
     section: true,
     items: [
-      { title: "Profile", href: "/dashboard/user/profile" },
-      { title: "Groups", href: "/dashboard/user/groups" },
-      { title: "Role", href: "/dashboard/user/role" },
-      { title: "Policy", href: "/dashboard/user/policy" },
-      { title: "Sessions", href: "/dashboard/user/sessions" },
+      { title: "Profile", icon: User, href: "/dashboard/user/profile" },
+      { title: "Groups", icon: Users, href: "/dashboard/user/groups" },
+      { title: "Role", icon: Shield, href: "/dashboard/user/role" },
+      { title: "Policy", icon: ShieldAlert, href: "/dashboard/user/policy" },
+      { title: "Sessions", icon: Key, href: "/dashboard/user/sessions" },
     ],
   },
   {
@@ -43,18 +43,19 @@ const menuData: NavItem[] = [
     items: [
       { 
         title: "Settings", 
+        icon: Settings,
         items: [
-          { title: "Settings", href: "/dashboard/coming-soon/master-settings" }
+          { title: "General Settings", icon: Settings, href: "/dashboard/master/settings" }
         ] 
       },
-      { title: "NODES", href: "/dashboard/coming-soon/master-nodes" },
-      { title: "LOG Viewer", href: "/dashboard/coming-soon/master-logs" },
-      { title: "Notification", href: "/dashboard/coming-soon/notifications" },
-      { title: "Remote Install", href: "/dashboard/coming-soon/remote-install" },
-      { title: "Interface", href: "/dashboard/coming-soon/interface" },
-      { title: "AuthWS", href: "/dashboard/coming-soon/authws" },
-      { title: "Demo", href: "/dashboard/coming-soon/demo" },
-      { title: "Host Migration", href: "/dashboard/coming-soon/host-migration" },
+      { title: "NODES", icon: Server, href: "/dashboard/nodes" },
+      { title: "LOG Viewer", icon: FileText, href: "/dashboard/logs" },
+      { title: "Notification", icon: Bell, href: "/dashboard/master/notifications" },
+      { title: "Remote Install", icon: Download, href: "/dashboard/master/remote-install" },
+      { title: "Interface", icon: Monitor, href: "/dashboard/master/interface" },
+      { title: "AuthWS", icon: Webhook, href: "/dashboard/master/authws" },
+      { title: "Demo", icon: Play, href: "/dashboard/master/demo" },
+      { title: "Host Migration", icon: Globe, href: "/dashboard/master/host-migration" },
     ],
   },
   {
@@ -63,15 +64,17 @@ const menuData: NavItem[] = [
     items: [
       { 
         title: "Settings", 
+        icon: Settings,
         items: [
-          { title: "Settings", href: "/dashboard/coming-soon/consolidation-settings" },
+          { title: "Settings", icon: Settings, href: "/dashboard/coming-soon/consolidation-settings" },
           { 
             title: "Agent Settings", 
+            icon: Settings,
             items: [
-              { title: "Download", href: "/dashboard/coming-soon/download" },
-              { title: "External Logging", href: "/dashboard/coming-soon/external-logging" },
-              { title: "SMS Auth", href: "/dashboard/coming-soon/sms-auth" },
-              { title: "SMS Gateway", href: "/dashboard/coming-soon/sms-gateway" },
+              { title: "Download", icon: Download, href: "/dashboard/coming-soon/download" },
+              { title: "External Logging", icon: FileText, href: "/dashboard/coming-soon/external-logging" },
+              { title: "SMS Auth", icon: Shield, href: "/dashboard/coming-soon/sms-auth" },
+              { title: "SMS Gateway", icon: Webhook, href: "/dashboard/coming-soon/sms-gateway" },
             ] 
           },
         ] 
@@ -83,27 +86,37 @@ const menuData: NavItem[] = [
       { title: "VAULT", icon: Key, href: "/dashboard/credentials" },
       { title: "DB CONSOLE", icon: Terminal, href: "/dashboard/coming-soon/db-console" },
       { title: "LOG Viewer", icon: FileText, href: "/dashboard/logs" },
-      { title: "Regex Console", href: "/dashboard/coming-soon/regex-console" },
-      { title: "XML Console", href: "/dashboard/coming-soon/xml-console" },
-      { title: "Regex Job SIM", href: "/dashboard/coming-soon/regex-job-sim" },
-      { title: "CRYPTO TEST", href: "/dashboard/coming-soon/crypto-test" },
-      { title: "Data Sources", href: "/dashboard/coming-soon/data-sources" },
-      { title: "TEXTDB Query", href: "/dashboard/coming-soon/textdb-query" },
-      { title: "Script Console", href: "/dashboard/coming-soon/script-console" },
+      { title: "Regex Console", icon: Terminal, href: "/dashboard/coming-soon/regex-console" },
+      { title: "XML Console", icon: Code2, href: "/dashboard/coming-soon/xml-console" },
+      { title: "Regex Job SIM", icon: Cpu, href: "/dashboard/coming-soon/regex-job-sim" },
+      { title: "CRYPTO TEST", icon: Shield, href: "/dashboard/coming-soon/crypto-test" },
+      { title: "Data Sources", icon: Database, href: "/dashboard/coming-soon/data-sources" },
+      { title: "TEXTDB Query", icon: Search, href: "/dashboard/coming-soon/textdb-query" },
+      { title: "Script Console", icon: Terminal, href: "/dashboard/coming-soon/script-console" },
     ],
   },
   {
     title: "SECURE ACCESS",
     section: true,
     items: [
-      { title: "SA NODES", href: "/dashboard/coming-soon/sa-nodes" },
-      { title: "SA CHANNELS", href: "/dashboard/coming-soon/sa-channels" },
-      { title: "SA VFS", href: "/dashboard/coming-soon/sa-vfs" }
+      { title: "SA NODES", icon: Server, href: "/dashboard/coming-soon/sa-nodes" },
+      { title: "SA CHANNELS", icon: Share2, href: "/dashboard/coming-soon/sa-channels" },
+      { title: "SA VFS", icon: Database, href: "/dashboard/coming-soon/sa-vfs" }
     ]
   }
 ];
 
-export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
+export function Sidebar({ 
+  isOpen, 
+  onClose,
+  isCollapsed = false,
+  setIsCollapsed
+}: { 
+  isOpen?: boolean; 
+  onClose?: () => void;
+  isCollapsed?: boolean;
+  setIsCollapsed?: (collapsed: boolean) => void;
+}) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -118,48 +131,116 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
       )}
 
       <aside className={cn(
-        "fixed left-0 top-0 h-full bg-[#0F2444] dark:bg-[#020617] flex flex-col z-50 overflow-hidden shadow-2xl transition-transform duration-300 transform lg:translate-x-0 w-[260px] border-r border-[#1a3a5c] dark:border-border/50",
+        "fixed left-0 top-0 h-full flex flex-col z-50 overflow-hidden transition-all duration-500 transform lg:translate-x-0 border-r border-white/[0.06]",
+        "bg-gradient-to-b from-[#0a1128] via-[#0d1530] to-[#080e20] shadow-[4px_0_25px_rgba(0,0,0,0.3)]",
+        isCollapsed ? "w-[80px]" : "w-[260px]",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        {/* Sidebar Header */}
-      <div className="p-6">
-        <p className="text-[10px] font-bold tracking-[0.2em] text-[#94B8D8] uppercase mb-4 opacity-70">Main Navigation</p>
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/25">
-             <Activity className="w-5 h-5 stroke-[2.5px]" />
-          </div>
-          <span className="text-xl font-bold tracking-tight text-white uppercase letter-spacing-[0.05em]">Sync-Go</span>
-        </div>
-      </div>
+        {/* Ambient glow effects */}
+        <div className="absolute top-0 left-0 w-full h-40 bg-gradient-to-b from-primary/[0.07] to-transparent pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-primary/[0.04] to-transparent pointer-events-none" />
 
-      {/* Nav Content */}
-      <nav className="flex-1 overflow-y-auto premium-scrollbar px-3 py-2">
-        {menuData.map((group, idx) => (
-          <MenuGroup key={idx} group={group} pathname={pathname} />
-        ))}
-      </nav>
-    </aside>
+        {/* Sidebar Header - Branding */}
+        <div className="p-6 pb-8 border-b border-white/[0.06] shrink-0 relative">
+          <div className={cn("flex items-center gap-4 group cursor-pointer", isCollapsed && "lg:justify-center")} onClick={() => router.push("/dashboard")}>
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/30 blur-xl rounded-full group-hover:bg-primary/50 transition-all duration-700" />
+              <div className="relative w-11 h-11 rounded-2xl overflow-hidden shadow-2xl shadow-primary/40 group-hover:rotate-12 transition-transform duration-500 ring-1 ring-white/10">
+                 <img src="/syncgo-logo.png" alt="Sync-Go" className="w-full h-full object-cover" />
+              </div>
+            </div>
+            {!isCollapsed && (
+              <div className="flex flex-col animate-in fade-in duration-300">
+                <span className="text-lg font-black tracking-tight text-white uppercase leading-none">Sync-Go</span>
+                <span className="text-[9px] font-black tracking-[0.25em] text-primary/80 uppercase mt-1">Console</span>
+              </div>
+            )}
+          </div>
+        </div>
+   
+        {/* Nav Content */}
+        <nav className="flex-1 overflow-y-auto premium-scrollbar px-3 py-6 pb-16 relative">
+          {!isCollapsed ? (
+            <div className="mb-6 px-4">
+               <p className="text-[10px] font-black tracking-[0.25em] text-white/20 uppercase">SYSTEM DECK</p>
+            </div>
+          ) : (
+            <div className="mb-6 border-b border-white/[0.06] mx-4" />
+          )}
+          {menuData.map((group, idx) => (
+            <MenuGroup key={idx} group={group} pathname={pathname} isCollapsed={isCollapsed} />
+          ))}
+        </nav>
+
+        {/* Collapse Toggle Button */}
+        {setIsCollapsed && (
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className={cn(
+              "hidden lg:flex items-center justify-center w-7 h-7 rounded-lg border border-white/10 hover:border-primary/40 bg-white/[0.05] hover:bg-white/[0.1] text-white/40 hover:text-white transition-all duration-300 shadow-sm cursor-pointer absolute bottom-4 z-50",
+              isCollapsed ? "left-1/2 -translate-x-1/2" : "right-4"
+            )}
+          >
+            {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
+          </button>
+        )}
+      </aside>
     </>
   );
 }
 
-function MenuGroup({ group, pathname }: { group: NavItem, pathname: string }) {
-  const [isOpen, setIsOpen] = useState(true);
+function MenuGroup({ group, pathname, isCollapsed }: { group: NavItem; pathname: string; isCollapsed: boolean }) {
+  const hasActiveItem = (item: NavItem): boolean => {
+    if (item.href && pathname === item.href) return true;
+    if (item.items) {
+      return item.items.some(subItem => hasActiveItem(subItem));
+    }
+    return false;
+  };
+  
+  const isAnyChildActive = group.items ? group.items.some(item => hasActiveItem(item)) : false;
+  const [isOpen, setIsOpen] = useState(isAnyChildActive || group.title === "MAIN");
+
+  if (isCollapsed) {
+    return (
+      <div className="space-y-1.5 mb-4">
+        {group.items && group.items.map((item, idx) => (
+          <MenuItem key={idx} item={item} depth={1} pathname={pathname} isCollapsed={true} />
+        ))}
+      </div>
+    );
+  }
+
+  // Style menu groups (USER, MASTER, CONSOLIDATION, SECURE ACCESS) as elegant card boxes
+  const isMain = group.title === "MAIN";
+  const boxStyles = isMain
+    ? "mb-4"
+    : cn(
+        "mb-5 p-2 rounded-2xl border transition-all duration-300 ease-in-out",
+        isAnyChildActive 
+          ? "border-primary/20 bg-primary/[0.06] shadow-[0_4px_20px_rgba(99,102,241,0.08)]" 
+          : "border-white/[0.05] bg-white/[0.02] hover:border-white/[0.1] hover:bg-white/[0.04]"
+      );
 
   return (
-    <div className="mb-6">
+    <div className={boxStyles}>
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-bold tracking-[0.1em] text-[#94B8D8] hover:text-white transition-colors uppercase mb-1"
+        className={cn(
+          "w-full flex items-center justify-between px-3 py-2 text-[9px] font-black tracking-[0.18em] transition-colors uppercase mb-1.5 group select-none",
+          isAnyChildActive 
+            ? "text-primary" 
+            : "text-white/30 hover:text-white/70"
+        )}
       >
         <span>{group.title}</span>
-        {isOpen ? <ChevronDown className="w-3 h-3 opacity-40" /> : <ChevronRight className="w-3 h-3 opacity-40" />}
+        {isOpen ? <ChevronDown className="w-3 h-3 opacity-25 group-hover:opacity-100" /> : <ChevronRight className="w-3 h-3 opacity-25 group-hover:opacity-100" />}
       </button>
       
       {isOpen && group.items && (
-        <div className="space-y-0.5">
+        <div className="space-y-1 animate-in fade-in duration-300 pt-2 border-t border-white/[0.05]">
           {group.items.map((item, idx) => (
-            <MenuItem key={idx} item={item} depth={1} pathname={pathname} />
+            <MenuItem key={idx} item={item} depth={1} pathname={pathname} isCollapsed={false} />
           ))}
         </div>
       )}
@@ -167,8 +248,16 @@ function MenuGroup({ group, pathname }: { group: NavItem, pathname: string }) {
   );
 }
 
-function MenuItem({ item, depth, pathname }: { item: NavItem; depth: number, pathname: string }) {
-  const [isOpen, setIsOpen] = useState(false);
+function MenuItem({ item, depth, pathname, isCollapsed }: { item: NavItem; depth: number; pathname: string; isCollapsed: boolean }) {
+  const hasActiveSub = (subItem: NavItem): boolean => {
+    if (subItem.href && pathname === subItem.href) return true;
+    if (subItem.items) return subItem.items.some(hasActiveSub);
+    return false;
+  };
+  
+  const isAnySubActive = item.items ? item.items.some(hasActiveSub) : false;
+  const [isOpen, setIsOpen] = useState(isAnySubActive);
+  
   const router = useRouter();
   const hasSubItems = item.items && item.items.length > 0;
   const isActive = item.href ? pathname === item.href : false;
@@ -182,34 +271,44 @@ function MenuItem({ item, depth, pathname }: { item: NavItem; depth: number, pat
     }
   };
 
+  const IconComponent = item.icon;
+
   return (
     <div>
       <button 
         onClick={handleClick}
         className={cn(
-          "w-full h-[40px] flex items-center justify-between px-3 rounded-lg text-[14px] font-medium transition-all group relative",
-          depth === 1 ? "pl-4" : "pl-8",
+          "w-full h-[40px] flex items-center justify-between rounded-xl text-[13px] font-semibold transition-all group relative duration-300 cursor-pointer",
+          depth === 1 ? "pl-4 pr-4" : "pl-8 pr-4",
           isActive 
-            ? "bg-primary/15 text-primary" 
-            : "hover:bg-white/5 text-white/70 hover:text-white"
+            ? "bg-gradient-to-r from-primary/15 to-primary/5 text-primary border border-primary/20 shadow-[0_4px_15px_rgba(99,102,241,0.1)] font-bold" 
+            : "hover:bg-white/[0.05] text-white/50 hover:text-white hover:translate-x-1 border border-transparent",
+          isCollapsed && "justify-center pl-0 pr-0 hover:translate-x-0"
         )}
+        title={isCollapsed ? item.title : undefined}
       >
-        {isActive && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[24px] bg-primary rounded-r-full" />
-        )}
         <div className="flex items-center gap-3">
-           {item.icon && <item.icon className={cn("w-4 h-4", isActive ? "text-primary" : "opacity-50 group-hover:opacity-100")} />}
-           <span>{item.title}</span>
+          {IconComponent ? (
+            <IconComponent className={cn("w-4 h-4 transition-all duration-300 shrink-0", isActive ? "scale-110 text-primary" : "opacity-50 group-hover:opacity-90 group-hover:scale-110")} />
+          ) : (
+            <div className={cn("w-1.5 h-1.5 rounded-full transition-all duration-300 shrink-0", isActive ? "bg-primary scale-125 shadow-[0_0_8px_var(--primary)]" : "bg-white/30 group-hover:bg-white")} />
+          )}
+          {!isCollapsed && <span className="tracking-tight text-left truncate">{item.title}</span>}
         </div>
-        {hasSubItems && (
-          isOpen ? <ChevronDown className="w-3 h-3 opacity-40 group-hover:opacity-100" /> : <ChevronRight className="w-3 h-3 opacity-40 group-hover:opacity-100" />
+        {!isCollapsed && hasSubItems && (
+          <div className={cn("transition-transform duration-300", isOpen && "rotate-90")}>
+            <ChevronRight className="w-3.5 h-3.5 opacity-30 group-hover:opacity-100" />
+          </div>
         )}
       </button>
 
       {hasSubItems && isOpen && (
-        <div className="space-y-0.5 mt-0.5">
+        <div className={cn(
+          "space-y-1 mt-1 pl-4 border-l border-white/[0.08] ml-6 animate-in slide-in-from-top-1 duration-200",
+          isCollapsed && "pl-0 border-l-0 ml-0 flex flex-col items-center justify-center"
+        )}>
           {item.items?.map((sub, idx) => (
-            <MenuItem key={idx} item={sub} depth={depth + 1} pathname={pathname} />
+            <MenuItem key={idx} item={sub} depth={depth + 1} pathname={pathname} isCollapsed={isCollapsed} />
           ))}
         </div>
       )}

@@ -23,12 +23,37 @@ func (s *AgentGRPCServer) Session(stream proto.SyncAgent_SessionServer) error {
 		return err
 	}
 
-	// PROD SECURITY: Verify agent_token and node_code against DB
+	// PROD SECURITY: Verify agent_token and node_code against DB. Auto-register if not exists.
 	var dbToken string
 	err = s.DB.QueryRow(stream.Context(), "SELECT agent_token FROM M_NODE WHERE node_code = $1", first.NodeCode).Scan(&dbToken)
-	if err != nil || dbToken != first.AgentToken {
-		log.Printf("Security Violation: Unauthorized agent connection attempt from %s", first.NodeCode)
-		return fmt.Errorf("authentication failed: invalid node_code or agent_token")
+	if err != nil {
+		log.Printf("Agent node %s not found in database. Auto-registering...", first.NodeCode)
+		
+		// Dynamically get the count of nodes starting with "MASTER HOST"
+		var hostCount int
+		err = s.DB.QueryRow(stream.Context(), "SELECT COUNT(*) FROM M_NODE WHERE node_name LIKE 'MASTER HOST%'").Scan(&hostCount)
+		if err != nil {
+			hostCount = 1
+		}
+		nodeName := fmt.Sprintf("MASTER HOST %d", hostCount)
+
+		// Auto-register the node
+		_, err = s.DB.Exec(stream.Context(), `
+			INSERT INTO M_NODE (node_code, node_name, connection_mode, status, is_distributed, agent_token, last_seen)
+			VALUES ($1, $2, 'distributed', 'online', true, $3, NOW())
+			ON CONFLICT (node_code) DO NOTHING
+		`, first.NodeCode, nodeName, first.AgentToken)
+		if err != nil {
+			log.Printf("Auto-registration failed for node %s: %v", first.NodeCode, err)
+			return fmt.Errorf("authentication failed: unable to auto-register node")
+		}
+		log.Printf("Agent auto-registered successfully: %s with name %s", first.NodeCode, nodeName)
+		dbToken = first.AgentToken
+	}
+
+	if dbToken != first.AgentToken {
+		log.Printf("Security Violation: Unauthorized agent connection attempt from %s (Token mismatch)", first.NodeCode)
+		return fmt.Errorf("authentication failed: invalid agent_token")
 	}
 
 	log.Printf("Agent authenticated: %s", first.NodeCode)
@@ -54,6 +79,16 @@ func (s *AgentGRPCServer) Session(stream proto.SyncAgent_SessionServer) error {
 			return err
 		}
 		log.Printf("Heartbeat from %s: %s", first.NodeCode, msg.Status)
+
+		// Update node status and last_seen in database to prevent status cleaner from marking it offline
+		if s.DB != nil {
+			_, dbErr := s.DB.Exec(stream.Context(), 
+				"UPDATE M_NODE SET status = $1, last_seen = NOW() WHERE node_code = $2", 
+				msg.Status, first.NodeCode)
+			if dbErr != nil {
+				log.Printf("Failed to update heartbeat in DB for node %s: %v", first.NodeCode, dbErr)
+			}
+		}
 	}
 
 	return nil

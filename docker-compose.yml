@@ -1,23 +1,23 @@
 version: '3.8'
 
 services:
-  db:
-    image: postgres:15-alpine
-    container_name: syncgo-db
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: B1ntang12!!
-      POSTGRES_DB: dsp
-    ports:
-      - "5433:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d dsp"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+  # db:
+  #   image: postgres:15-alpine
+  #   container_name: syncgo-db
+  #   environment:
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: B1ntang12!@#
+  #     POSTGRES_DB: dsp
+  #   ports:
+  #     - "5433:5432"
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U postgres -d dsp"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
 
   backend:
     build:
@@ -27,7 +27,7 @@ services:
     environment:
       - PORT=8080
       - GRPC_PORT=9090
-      - DATABASE_URL=postgres://postgres:B1ntang12!!@db:5432/dsp?sslmode=disable
+      - DATABASE_URL=postgres://postgres:B1ntang12!%40%23@host.docker.internal:5433/dsp?sslmode=disable
       - JWT_SECRET=supersecret-dsp-key-change-in-production
       - TLS_ENABLED=true
       - TLS_CA_PATH=/app/certs/ca.crt
@@ -35,9 +35,9 @@ services:
       - TLS_KEY_PATH=/app/certs/server.key
     volumes:
       - ./certs:/app/certs:ro
+    extra_hosts:
+      - "localhost:host-gateway"
     depends_on:
-      db:
-        condition: service_healthy
       cert-gen:
         condition: service_completed_successfully
     restart: unless-stopped
@@ -69,9 +69,11 @@ services:
       - TLS_CERT_PATH=/app/certs/client.crt
       - TLS_KEY_PATH=/app/certs/client.key
       - DB_DRIVER=postgres
-      - DB_URL=postgres://postgres:B1ntang12!!@db:5432/dsp?sslmode=disable
+      - DB_URL=postgres://postgres:B1ntang12!%40%23@host.docker.internal:5433/dsp?sslmode=disable
     volumes:
       - ./certs:/app/certs:ro
+    extra_hosts:
+      - "localhost:host-gateway"
     depends_on:
       backend:
         condition: service_started
@@ -107,5 +109,5 @@ services:
       - backend
     restart: unless-stopped
 
-volumes:
-  pgdata:
+# volumes:
+#   pgdata:

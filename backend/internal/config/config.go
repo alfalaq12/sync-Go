@@ -23,7 +23,7 @@ func LoadConfig() *Config {
 	return &Config{
 		Port:        getEnv("PORT", "8080"),
 		GRPCPort:    getEnv("GRPC_PORT", "9090"),
-		DatabaseURL: getEnv("DATABASE_URL", "postgres://postgres:B1ntang12!!@localhost:5432/dsp?sslmode=disable"),
+		DatabaseURL: getEnv("DATABASE_URL", "postgres://postgres:B1ntang12!%40%23@localhost:5433/dsp?sslmode=disable"),
 		JWTSecret:   getEnv("JWT_SECRET", "supersecret-dsp-key-change-in-production"),
 		AgentID:     getEnv("AGENT_ID", "agent-default"),
 		MasterAddr:  getEnv("MASTER_ADDR", "127.0.0.1:9090"),
@@ -49,7 +49,7 @@ func findCertPath(defaultPath string) string {
 }
 
 func getEnv(key, defaultVal string) string {
-	if value, exists := os.LookupEnv(key); exists {
+	if value, exists := os.LookupEnv(key); exists && value != "" {
 		return value
 	}
 	return defaultVal

@@ -52,7 +52,11 @@ func main() {
 		go collector.Start(ctx)
 	}
 
-	log.Printf("Starting HTTP Dashboard server on port %s", cfg.Port)
+	protocol := "HTTP"
+	if cfg.TLSEnabled {
+		protocol = "HTTPS"
+	}
+	log.Printf("Starting %s Dashboard server on port %s", protocol, cfg.Port)
 	if cfg.TLSEnabled {
 		log.Printf("TLS is enabled. Serving over HTTPS...")
 		if err := r.RunTLS(":"+cfg.Port, cfg.TLSCertPath, cfg.TLSKeyPath); err != nil {

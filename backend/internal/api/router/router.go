@@ -18,8 +18,12 @@ func SetupRouter(db *pgxpool.Pool, cfg *config.Config) *gin.Engine {
 
 	// CORS middleware — whitelist specific origins instead of wildcard
 	allowedOrigins := map[string]bool{
-		"http://localhost:3000": true,
-		"http://127.0.0.1:3000": true,
+		"http://localhost:3000":  true,
+		"https://localhost:3000": true,
+		"http://127.0.0.1:3000":  true,
+		"https://127.0.0.1:3000": true,
+		"https://localhost":      true,
+		"https://127.0.0.1":      true,
 	}
 	// Allow extra origins from environment (comma-separated)
 	if extra := os.Getenv("CORS_ALLOWED_ORIGINS"); extra != "" {
@@ -67,6 +71,8 @@ func SetupRouter(db *pgxpool.Pool, cfg *config.Config) *gin.Engine {
 	credentialHandler := handlers.NewCredentialHandler(db)
 	userHandler := handlers.NewUserHandler(db)
 	statsHandler := handlers.NewStatsHandler(db)
+	systemHandler := handlers.NewSystemHandler(db)
+	dbConsoleHandler := handlers.NewDBConsoleHandler(db)
 
 	// Public routes
 	public := r.Group("/api/v1")
@@ -150,6 +156,24 @@ func SetupRouter(db *pgxpool.Pool, cfg *config.Config) *gin.Engine {
 		// Stats
 		protected.GET("/stats/metrics", statsHandler.GetMetrics)
 		protected.GET("/stats/volume", statsHandler.GetVolumeStats)
+
+		// System & Master endpoints
+		protected.GET("/system/settings", systemHandler.GetSettings)
+		protected.PUT("/system/settings", systemHandler.UpdateSettings)
+		protected.POST("/system/remote-install", systemHandler.RemoteInstall)
+		protected.GET("/system/notifications", systemHandler.GetNotifications)
+		protected.POST("/system/notifications/test", systemHandler.SendTestNotification)
+		protected.GET("/system/interfaces", systemHandler.GetInterfaces)
+		protected.PUT("/system/interfaces", systemHandler.UpdateInterfaces)
+		protected.GET("/system/authws", systemHandler.GetAuthWS)
+		protected.PUT("/system/authws", systemHandler.UpdateAuthWS)
+		protected.POST("/system/authws/test", systemHandler.TestAuthWS)
+		protected.POST("/system/demo/simulate", systemHandler.SimulateTraffic)
+		protected.POST("/system/demo/reset", systemHandler.ResetDatabase)
+		protected.POST("/system/host-migration", systemHandler.HostMigration)
+
+		// DB Console
+		protected.POST("/system/db-console/query", dbConsoleHandler.ExecuteQuery)
 	}
 
 	return r

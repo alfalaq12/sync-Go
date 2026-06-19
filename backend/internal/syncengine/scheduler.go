@@ -30,6 +30,10 @@ func NewScheduler(db *pgxpool.Pool, engine *Engine) *Scheduler {
 
 func (s *Scheduler) Start(ctx context.Context) {
 	log.Println("Starting background Job Scheduler...")
+	if s.db == nil {
+		log.Println("Scheduler: Database connection is nil, scheduler will not start.")
+		return
+	}
 	s.cron.Start()
 
 	// Initial load and then periodic refresh every minute
@@ -100,6 +104,10 @@ func (s *Scheduler) RefreshJobs(ctx context.Context) {
 
 func (s *Scheduler) TriggerJob(networkID int) {
 	log.Printf("Scheduler: Triggering scheduled execution for Network #%d", networkID)
+	if s.db == nil {
+		log.Println("Scheduler: Database connection is nil, cannot trigger job.")
+		return
+	}
 	
 	ctx := context.Background()
 

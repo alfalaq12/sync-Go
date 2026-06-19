@@ -44,125 +44,507 @@
 
 @layer base {
   :root {
-    --background: #F5F7FA;
-    --foreground: #0F172A;
-    --card: #FFFFFF;
-    --card-foreground: #0F172A;
-    --popover: #FFFFFF;
-    --popover-foreground: #0F172A;
-    --primary: #1E90FF;
-    --primary-foreground: #FFFFFF;
-    --secondary: #00C6AD;
-    --secondary-foreground: #FFFFFF;
-    --muted: #F1F5F9;
-    --muted-foreground: #64748B;
-    --accent: #1E90FF;
-    --accent-foreground: #FFFFFF;
-    --destructive: #EF4444;
-    --destructive-foreground: #FFFFFF;
-    --border: #E2E8F0;
-    --input: #E2E8F0;
-    --ring: #1E90FF;
-    --radius: 0.75rem;
-    --sidebar: #0F2444;
-    --sidebar-foreground: #FFFFFF;
-    --sidebar-primary: #1E90FF;
-    --sidebar-primary-foreground: #FFFFFF;
-    --sidebar-accent: #1a3a5c;
-    --sidebar-accent-foreground: #FFFFFF;
-    --sidebar-border: #1a3a5c;
-    --sidebar-ring: #1E90FF;
+    --background: #f1f5f9; /* Slate 100: provides higher contrast, making white cards pop */
+    --foreground: #0f172a;
+    --card: #ffffff;
+    --card-foreground: #0f172a;
+    --popover: #ffffff;
+    --popover-foreground: #0f172a;
+    --primary: #4f46e5;
+    --primary-foreground: #ffffff;
+    --secondary: #10b981;
+    --secondary-foreground: #ffffff;
+    --muted: #f1f5f9;
+    --muted-foreground: #475569; /* Slate 600: better readability than #64748b */
+    --accent: #6366f1;
+    --accent-foreground: #ffffff;
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+    --border: #e2e8f0;
+    --input: #e2e8f0;
+    --ring: #4f46e5;
+    --radius: 1rem;
+    --sidebar: #0b1329;
+    --sidebar-foreground: #f8fafc;
+    --sidebar-primary: #4f46e5;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #111e3b;
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: #152547;
+    --sidebar-ring: #4f46e5;
+
+    /* Mesh Gradient Colors Light - Beautiful soft glowing hues */
+    --mesh-1: rgba(99, 102, 241, 0.08); /* 8% indigo */
+    --mesh-2: rgba(139, 92, 246, 0.07); /* 7% violet instead of green for a sweeter look */
+    --mesh-3: rgba(6, 182, 212, 0.08); /* 8% cyan */
   }
 
   .dark {
-    --background: #020617;
-    --foreground: #F8FAFC;
-    --card: #0F172A;
-    --card-foreground: #F8FAFC;
-    --popover: #0F172A;
-    --popover-foreground: #F8FAFC;
-    --primary: #3B82F6;
-    --primary-foreground: #FFFFFF;
-    --secondary: #00C6AD;
-    --secondary-foreground: #FFFFFF;
-    --muted: #1E293B;
-    --muted-foreground: #94A3B8;
-    --accent: #3B82F6;
-    --accent-foreground: #FFFFFF;
-    --destructive: #EF4444;
-    --destructive-foreground: #FFFFFF;
-    --border: #1E293B;
-    --input: #1E293B;
-    --ring: #3B82F6;
+    --background: #060b16;
+    --foreground: #f9fafb;
+    --card: #0e172a;
+    --card-foreground: #f9fafb;
+    --popover: #0e172a;
+    --popover-foreground: #f9fafb;
+    --primary: #6366f1;
+    --primary-foreground: #ffffff;
+    --secondary: #10b981;
+    --secondary-foreground: #ffffff;
+    --muted: #1e293b;
+    --muted-foreground: #9ca3af;
+    --accent: #818cf8;
+    --accent-foreground: #ffffff;
+    --destructive: #f87171;
+    --destructive-foreground: #ffffff;
+    --border: #152547;
+    --input: #1e293b;
+    --ring: #6366f1;
+
+    /* Mesh Gradient Colors Dark */
+    --mesh-1: rgba(99, 102, 241, 0.12);
+    --mesh-2: rgba(16, 185, 129, 0.08);
+    --mesh-3: rgba(6, 182, 212, 0.12);
   }
 
   * {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground font-body;
+    @apply bg-background text-foreground font-body transition-colors duration-300;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-heading;
+    @apply font-heading tracking-tight;
   }
   code, pre {
     @apply font-mono;
   }
 }
 
+/* Premium Animations */
+@keyframes float {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(2deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.6; filter: drop-shadow(0 0 2px var(--primary)); }
+  50% { opacity: 1; filter: drop-shadow(0 0 8px var(--primary)); }
+}
+
+@keyframes ambient-glow {
+  0%, 100% { transform: translate(0px, 0px) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.95); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s infinite ease-in-out;
+}
+
+/* Premium Utilities */
+.mesh-gradient {
+  background-color: var(--background);
+  background-image: 
+    radial-gradient(at 0% 0%, var(--mesh-1) 0, transparent 45%),
+    radial-gradient(at 50% 0%, var(--mesh-2) 0, transparent 40%),
+    radial-gradient(at 100% 0%, var(--mesh-3) 0, transparent 45%);
+  background-attachment: fixed;
+}
+
+.cyber-grid {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+}
+
+@utility glass {
+  @apply bg-card border border-border backdrop-blur-xl;
+}
+
 /* Premium Scrollbar */
 .premium-scrollbar::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 .premium-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
 .premium-scrollbar::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
+  background: rgba(99, 102, 241, 0.15);
   border-radius: 10px;
 }
 .premium-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
+  background: rgba(99, 102, 241, 0.35);
 }
 
-.dark .premium-scrollbar::-webkit-scrollbar-thumb {
-    background: #334155;
+.premium-card {
+  @apply bg-card/90 dark:bg-card/45 border border-border/85 backdrop-blur-xl relative overflow-hidden transition-all duration-500;
+  border-radius: 24px;
+  box-shadow: 
+    0 10px 25px -5px rgba(15, 23, 42, 0.05), 
+    0 8px 10px -6px rgba(15, 23, 42, 0.05),
+    0 1px 3px rgba(15, 23, 42, 0.02);
 }
 
-/* Enterprise Components */
-.enterprise-card {
-  @apply bg-card text-card-foreground border border-border transition-all duration-300;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+.premium-card:hover {
+  @apply border-primary/30 bg-card dark:bg-card/65;
+  box-shadow: 
+    0 20px 40px -15px rgba(99, 102, 241, 0.12), 
+    0 0 25px -5px rgba(99, 102, 241, 0.06),
+    0 1px 5px rgba(0, 0, 0, 0.03);
+  transform: translateY(-4px);
 }
 
-.enterprise-card:hover {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+.premium-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
+  pointer-events: none;
 }
 
 .premium-input {
-  @apply bg-card text-foreground border-[1.5px] border-border rounded-lg px-[14px] py-[10px] transition-all duration-200;
+  @apply bg-card/50 text-foreground border border-border backdrop-blur-md rounded-2xl px-4 py-3 transition-all duration-300;
 }
 
 .premium-input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(30, 144, 255, 0.1);
+  @apply border-primary/60 ring-4 ring-primary/5;
   outline: none;
 }
 
 .premium-button {
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-weight: 500;
-  transition: all 0.2s ease;
+  @apply rounded-2xl px-6 py-3 font-semibold transition-all duration-300 active:scale-95 flex items-center justify-center gap-2 text-sm select-none;
 }
 
 .premium-button-primary {
-  background: var(--primary);
-  color: var(--primary-foreground);
+  @apply bg-primary text-primary-foreground shadow-lg shadow-primary/15 hover:shadow-xl hover:shadow-primary/25 hover:-translate-y-0.5 hover:bg-primary/95;
 }
 
-.premium-button-primary:hover {
-  transform: translateY(-1px);
-  opacity: 0.9;
+.premium-button-secondary {
+  @apply bg-muted hover:bg-muted/80 text-foreground hover:-translate-y-0.5 border border-border;
 }
+
+/* ==========================================
+   PREMIUM & THEME-AWARE SWEETALERT2 STYLING
+   ========================================== */
+
+/* Glass backdrop overlay with blur for modals - ONLY apply if container holds a modal popup */
+div.swal2-container:has(.swal2-modal) {
+  backdrop-filter: blur(12px) !important;
+  background-color: rgba(6, 11, 22, 0.4) !important; /* Premium dark glass dimming */
+  pointer-events: auto !important;
+}
+
+/* Default container setup: transparent and allow clicks to pass through (perfect for toasts) */
+div.swal2-container {
+  backdrop-filter: none !important;
+  background-color: transparent !important;
+  pointer-events: none !important;
+  transition: all 0.4s ease-in-out !important;
+}
+
+/* Ensure the popups themselves (both modal and toast) are always clickable */
+div.swal2-container div.swal2-popup {
+  pointer-events: auto !important;
+}
+
+/* Custom premium elastic-spring animation for scale in */
+@keyframes swal-spring-in {
+  0% {
+    transform: scale(0.9) translateY(12px);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.025) translateY(-2px);
+    opacity: 0.9;
+  }
+  85% {
+    transform: scale(0.985) translateY(1px);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Smooth fade out animation */
+@keyframes swal-fade-out {
+  0% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.9) translateY(10px);
+    opacity: 0;
+  }
+}
+
+/* Apply spring scale animation to popup */
+div.swal2-popup.swal2-show {
+  animation: swal-spring-in 0.5s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+
+div.swal2-popup.swal2-hide {
+  animation: swal-fade-out 0.25s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
+}
+
+/* Main Popup Card */
+div.swal2-popup {
+  background: var(--card) !important;
+  color: var(--foreground) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 28px !important;
+  padding: 2.5rem !important;
+  font-family: var(--font-body), system-ui, -apple-system, sans-serif !important;
+  box-shadow: 
+    0 25px 60px -15px rgba(0, 0, 0, 0.2),
+    0 0 50px 0 rgba(99, 102, 241, 0.05),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.05) !important;
+  overflow: hidden !important;
+}
+
+/* Custom styles for Dark Theme overrides to add soft glowing accent */
+.dark div.swal2-popup {
+  box-shadow: 
+    0 25px 60px -15px rgba(0, 0, 0, 0.45),
+    0 0 50px 0 rgba(99, 102, 241, 0.08),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.03) !important;
+}
+
+/* Small elegant Toasts style */
+div.swal2-popup.swal2-toast {
+  padding: 1rem 1.5rem !important;
+  border-radius: 18px !important;
+  box-shadow: 
+    0 15px 35px -5px rgba(0, 0, 0, 0.1),
+    0 5px 15px -3px rgba(0, 0, 0, 0.05),
+    0 0 25px 0 rgba(99, 102, 241, 0.05) !important;
+  backdrop-filter: blur(20px) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+}
+
+.dark div.swal2-popup.swal2-toast {
+  background: rgba(14, 23, 42, 0.85) !important;
+  border-color: rgba(99, 102, 241, 0.15) !important;
+}
+
+/* Toast scale in animation */
+div.swal2-popup.swal2-toast.swal2-show {
+  animation: swal-spring-in 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+
+/* SweetAlert Title text */
+.swal2-title {
+  color: var(--foreground) !important;
+  font-family: var(--font-heading), system-ui, -apple-system, sans-serif !important;
+  font-size: 1.625rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.03em !important;
+  margin-top: 1rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+/* Title on Toast */
+div.swal2-popup.swal2-toast .swal2-title {
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  color: var(--foreground) !important;
+}
+
+/* SweetAlert HTML content body */
+.swal2-html-container {
+  color: var(--muted-foreground) !important;
+  font-size: 0.95rem !important;
+  font-weight: 500 !important;
+  line-height: 1.6 !important;
+  margin: 1.25rem 0 0 0 !important;
+}
+
+/* Content on Toast */
+div.swal2-popup.swal2-toast .swal2-html-container {
+  font-size: 0.8125rem !important;
+  margin: 0.25rem 0 0 0 !important;
+  color: var(--muted-foreground) !important;
+}
+
+/* Actions wrapper */
+.swal2-actions {
+  margin-top: 2.25rem !important;
+  gap: 0.75rem !important;
+  width: 100% !important;
+  justify-content: center !important;
+}
+
+/* Brand Button: Confirm */
+.swal2-confirm.swal2-styled {
+  background: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+  border-radius: 16px !important;
+  padding: 0.875rem 2rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+  box-shadow: 0 8px 20px -6px rgba(99, 102, 241, 0.4) !important;
+  border: none !important;
+  cursor: pointer !important;
+  outline: none !important;
+}
+
+.swal2-confirm.swal2-styled:hover {
+  background: var(--accent) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 12px 25px -8px rgba(99, 102, 241, 0.6) !important;
+}
+
+.swal2-confirm.swal2-styled:active {
+  transform: translateY(0) scale(0.97) !important;
+}
+
+.swal2-confirm.swal2-styled:focus {
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3) !important;
+}
+
+/* Brand Button: Cancel / Deny */
+.swal2-cancel.swal2-styled, .swal2-deny.swal2-styled {
+  background: var(--muted) !important;
+  color: var(--foreground) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 16px !important;
+  padding: 0.875rem 2rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+  cursor: pointer !important;
+  outline: none !important;
+}
+
+.swal2-cancel.swal2-styled:hover, .swal2-deny.swal2-styled:hover {
+  background: var(--muted) !important;
+  filter: brightness(0.95) !important;
+  transform: translateY(-2px) !important;
+}
+
+.swal2-cancel.swal2-styled:active, .swal2-deny.swal2-styled:active {
+  transform: translateY(0) scale(0.97) !important;
+}
+
+.dark .swal2-cancel.swal2-styled:hover, .dark .swal2-deny.swal2-styled:hover {
+  background: var(--muted) !important;
+  filter: brightness(1.15) !important;
+}
+
+/* Premium Inputs inside Modals */
+.swal2-input, .swal2-textarea, .swal2-select {
+  background-color: var(--muted) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--foreground) !important;
+  border-radius: 16px !important;
+  font-size: 0.9rem !important;
+  padding: 0.875rem 1.25rem !important;
+  box-shadow: none !important;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+  margin: 1.5rem auto 0 auto !important;
+}
+
+.swal2-input:focus, .swal2-textarea:focus, .swal2-select:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12) !important;
+  outline: none !important;
+  background-color: var(--card) !important;
+}
+
+/* Brand Icons Style & Glow Customizations */
+.swal2-icon {
+  margin: 1.5rem auto 0.75rem auto !important;
+  transform: scale(1.05) !important;
+  border-width: 3px !important;
+}
+
+/* Success Icon */
+.swal2-icon.swal2-success {
+  border-color: var(--secondary) !important;
+}
+
+.swal2-icon.swal2-success [class^='swal2-success-line'] {
+  background-color: var(--secondary) !important;
+}
+
+.swal2-icon.swal2-success .swal2-success-ring {
+  border: 3px solid rgba(16, 185, 129, 0.2) !important;
+}
+
+.swal2-icon.swal2-success.swal2-icon-show {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.15) !important;
+}
+
+/* Error Icon */
+.swal2-icon.swal2-error {
+  border-color: var(--destructive) !important;
+}
+
+.swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
+  background-color: var(--destructive) !important;
+}
+
+.swal2-icon.swal2-error.swal2-icon-show {
+  box-shadow: 0 0 20px rgba(248, 113, 113, 0.15) !important;
+}
+
+/* Warning Icon */
+.swal2-icon.swal2-warning {
+  border-color: #f59e0b !important;
+  color: #f59e0b !important;
+}
+
+.swal2-icon.swal2-warning.swal2-icon-show {
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.15) !important;
+}
+
+/* Info Icon */
+.swal2-icon.swal2-info {
+  border-color: #3b82f6 !important;
+  color: #3b82f6 !important;
+}
+
+.swal2-icon.swal2-info.swal2-icon-show {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.15) !important;
+}
+
+/* Loading Spinner */
+.swal2-loader {
+  border-color: var(--primary) transparent var(--primary) transparent !important;
+  width: 2.5em !important;
+  height: 2.5em !important;
+}
+
+/* Progress Step Wizard line */
+.swal2-progress-steps .swal2-progress-step {
+  background: var(--primary) !important;
+}
+
+.swal2-progress-steps .swal2-progress-step.swal2-active-progress-step {
+  background: var(--accent) !important;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.5) !important;
+}
+
+.swal2-progress-steps .swal2-progress-step-line {
+  background: var(--border) !important;
+}
+
+

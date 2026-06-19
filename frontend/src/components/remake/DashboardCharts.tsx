@@ -52,30 +52,56 @@ export function DashboardCharts() {
     return metricsData || [];
   };
 
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-[#0F172A] border border-white/10 p-4 rounded-2xl shadow-2xl">
+          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 border-b border-white/5 pb-2">
+            Time: {label}
+          </p>
+          <div className="space-y-1.5">
+            {payload.map((entry: any, index: number) => (
+              <div key={index} className="flex items-center gap-3">
+                <div className="w-1.5 h-1.5 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.4)]" style={{ backgroundColor: entry.color }} />
+                <span className="text-[10px] font-bold text-white/70 uppercase tracking-widest">
+                  {entry.name}
+                </span>
+                <span className="text-[12px] font-black text-white ml-auto">
+                  {entry.value.toFixed(1)}%
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
-    <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+    <div className="grid gap-6 grid-cols-1 lg:grid-cols-[3fr_2fr]">
       {/* Monthly Volume Bar Chart */}
-      <div className="enterprise-card p-6 flex flex-col gap-4">
+      <div className="premium-card p-8 flex flex-col gap-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-2xl bg-primary/10 text-primary shadow-sm border border-primary/5">
               <Database className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-[14px] font-bold text-foreground leading-tight uppercase tracking-tight">Sync Volume Trends</h3>
-              <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">Historical performance (GB)</p>
+              <h3 className="text-sm font-black text-foreground uppercase tracking-tight">Sync Volume Trends</h3>
+              <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.15em] opacity-50">Historical throughput (GB)</p>
             </div>
           </div>
           
           {/* Range Selector */}
-          <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg border border-border">
+          <div className="flex items-center gap-1 bg-white/5 p-1.5 rounded-xl border border-white/5 backdrop-blur-sm">
             {["24h", "7d", "30d"].map((r) => (
               <button
                 key={r}
                 onClick={() => setVRange(r as any)}
                 className={cn(
-                  "px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all",
-                  vRange === r ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                  vRange === r ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "text-muted-foreground/60 hover:text-foreground"
                 )}
               >
                 {r}
@@ -84,16 +110,17 @@ export function DashboardCharts() {
           </div>
         </div>
         
-        <div className="h-[250px] w-full mt-4 flex items-center justify-center border border-dashed border-border rounded-lg bg-muted/5">
+        <div className="h-[280px] w-full mt-2 flex items-center justify-center rounded-2xl bg-white/[0.02] border border-white/5 p-4 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
           {volumeLoading ? (
-             <div className="flex flex-col items-center gap-2 text-muted-foreground/40 animate-pulse">
-                <Database className="w-8 h-8 opacity-20" />
-                <span className="text-[12px] font-medium italic">Fetching performance data...</span>
+             <div className="flex flex-col items-center gap-3 text-muted-foreground/30 animate-pulse relative z-10">
+                <Database className="w-10 h-10 opacity-20" />
+                <span className="text-[11px] font-black uppercase tracking-widest">Streaming metrics...</span>
              </div>
           ) : getVolumeData().length === 0 ? (
-            <div className="flex flex-col items-center gap-2 text-muted-foreground/40">
-              <Database className="w-8 h-8 opacity-20" />
-              <span className="text-[12px] font-medium italic">No synchronization data available</span>
+            <div className="flex flex-col items-center gap-3 text-muted-foreground/30 relative z-10">
+              <Database className="w-10 h-10 opacity-20" />
+              <span className="text-[11px] font-black uppercase tracking-widest">No history recorded</span>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
@@ -103,31 +130,34 @@ export function DashboardCharts() {
                   dataKey="day" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: colors.text, fontSize: 10, fontWeight: 600 }} 
+                  tick={{ fill: colors.text, fontSize: 10, fontWeight: 900 }} 
                 />
                 <YAxis 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: colors.text, fontSize: 10, fontWeight: 600 }} 
+                  tick={{ fill: colors.text, fontSize: 10, fontWeight: 900 }} 
                 />
                 <Tooltip 
-                  cursor={{ fill: colors.grid }}
+                  cursor={{ fill: "rgba(255,255,255,0.05)" }}
                   contentStyle={{ 
-                    backgroundColor: colors.tooltipBg, 
-                    borderColor: colors.tooltipBorder,
-                    borderRadius: "12px",
+                    backgroundColor: "rgba(15, 23, 42, 0.9)", 
+                    backdropFilter: "blur(12px)",
+                    borderColor: "rgba(255, 255, 255, 0.1)",
+                    borderRadius: "16px",
                     fontSize: "12px",
-                    fontWeight: "bold",
-                    color: "hsl(var(--foreground))",
-                    boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)"
+                    fontWeight: "900",
+                    color: "#fff",
+                    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+                    padding: "12px 16px"
                   }}
+                  itemStyle={{ color: "#3b82f6", textTransform: "uppercase", letterSpacing: "1px" }}
                 />
-                <Bar dataKey="volume" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="volume" radius={[6, 6, 0, 0]}>
                   {getVolumeData().map((entry: any, index: number, arr: any[]) => (
                     <Cell 
                       key={`cell-${index}`} 
                       fill={index === arr.length - 1 ? colors.primary : colors.primaryLight} 
-                      className="hover:fill-primary transition-all duration-300"
+                      className="hover:fill-primary transition-all duration-500 cursor-pointer"
                     />
                   ))}
                 </Bar>
@@ -138,27 +168,27 @@ export function DashboardCharts() {
       </div>
 
       {/* Master Resource Line/Area Chart */}
-      <div className="enterprise-card p-6 flex flex-col gap-4">
+      <div className="premium-card p-8 flex flex-col gap-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-500 shadow-sm border border-emerald-500/5">
               <Activity className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-[14px] font-bold text-foreground leading-tight uppercase tracking-tight">Master Resource Usage</h3>
-              <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">CPU & RAM Consumption</p>
+              <h3 className="text-sm font-black text-foreground uppercase tracking-tight">Resource Utilization</h3>
+              <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.15em] opacity-50">Master node performance</p>
             </div>
           </div>
           
           {/* Range Selector */}
-          <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg border border-border">
+          <div className="flex items-center gap-1 bg-white/5 p-1.5 rounded-xl border border-white/5 backdrop-blur-sm">
             {["24h", "7d", "30d"].map((r) => (
               <button
                 key={r}
                 onClick={() => setRRange(r as any)}
                 className={cn(
-                  "px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all",
-                  rRange === r ? "bg-card text-emerald-500 shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                  rRange === r ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20" : "text-muted-foreground/60 hover:text-foreground"
                 )}
               >
                 {r}
@@ -167,27 +197,28 @@ export function DashboardCharts() {
           </div>
         </div>
 
-        <div className="h-[250px] w-full mt-4 flex items-center justify-center border border-dashed border-border rounded-lg bg-muted/5">
+        <div className="h-[280px] w-full mt-2 flex items-center justify-center rounded-2xl bg-white/[0.02] border border-white/5 p-4 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 to-transparent pointer-events-none" />
           {metricsLoading ? (
-             <div className="flex flex-col items-center gap-2 text-muted-foreground/40 animate-pulse">
-                <Activity className="w-8 h-8 opacity-20" />
-                <span className="text-[12px] font-medium italic">Reading node performance...</span>
+             <div className="flex flex-col items-center gap-3 text-muted-foreground/30 animate-pulse relative z-10">
+                <Activity className="w-10 h-10 opacity-20" />
+                <span className="text-[11px] font-black uppercase tracking-widest">Polling sensors...</span>
              </div>
           ) : getResourceData().length === 0 ? (
-             <div className="flex flex-col items-center gap-2 text-muted-foreground/40">
-                <Activity className="w-8 h-8 opacity-20" />
-                <span className="text-[12px] font-medium italic">Awaiting Master Node metrics...</span>
+             <div className="flex flex-col items-center gap-3 text-muted-foreground/30 relative z-10">
+                <Activity className="w-10 h-10 opacity-20" />
+                <span className="text-[11px] font-black uppercase tracking-widest">Waiting for telemetry</span>
              </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={getResourceData()} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorCpu" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={colors.primary} stopOpacity={0.3}/>
+                    <stop offset="5%" stopColor={colors.primary} stopOpacity={0.4}/>
                     <stop offset="95%" stopColor={colors.primary} stopOpacity={0}/>
                   </linearGradient>
                   <linearGradient id="colorRam" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={colors.emerald} stopOpacity={0.3}/>
+                    <stop offset="5%" stopColor={colors.emerald} stopOpacity={0.4}/>
                     <stop offset="95%" stopColor={colors.emerald} stopOpacity={0}/>
                   </linearGradient>
                 </defs>
@@ -196,39 +227,36 @@ export function DashboardCharts() {
                   dataKey="time" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: colors.text, fontSize: 10, fontWeight: 600 }} 
+                  tick={{ fill: colors.text, fontSize: 10, fontWeight: 900 }} 
                 />
                 <YAxis 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: colors.text, fontSize: 10, fontWeight: 600 }} 
+                  tick={{ fill: colors.text, fontSize: 10, fontWeight: 900 }} 
                   domain={[0, 100]}
                 />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: colors.tooltipBg, 
-                    borderColor: colors.tooltipBorder,
-                    borderRadius: "12px",
-                    fontSize: "12px",
-                    fontWeight: "bold",
-                    color: "hsl(var(--foreground))"
-                  }}
-                />
+                <Tooltip content={<CustomTooltip />} />
                 <Area 
                   type="monotone" 
                   dataKey="cpu" 
+                  name="CPU Load"
                   stroke={colors.primary} 
                   fillOpacity={1} 
                   fill="url(#colorCpu)" 
-                  strokeWidth={2}
+                  strokeWidth={3}
+                  animationDuration={2000}
+                  activeDot={{ r: 6, strokeWidth: 0, fill: colors.primary }}
                 />
                 <Area 
                   type="monotone" 
                   dataKey="ram" 
+                  name="RAM Usage"
                   stroke={colors.emerald} 
                   fillOpacity={1} 
                   fill="url(#colorRam)" 
-                  strokeWidth={2}
+                  strokeWidth={3}
+                  animationDuration={2000}
+                  activeDot={{ r: 6, strokeWidth: 0, fill: colors.emerald }}
                 />
               </AreaChart>
             </ResponsiveContainer>

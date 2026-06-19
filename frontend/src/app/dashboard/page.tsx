@@ -54,11 +54,18 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col gap-1">
-        <h1 className="text-[28px] font-semibold tracking-tight text-foreground italic">Infrastructure Summary</h1>
-        <p className="text-[11px] font-bold text-muted-foreground tracking-[0.1em] uppercase">MONITOR CLUSTER HEALTH AND DATA SYNCHRONIZATION ACTIVITY IN REAL-TIME.</p>
+    <div className="space-y-10">
+      {/* Header Section */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between border-b border-border/60 pb-6">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-3.5">
+            <div className="w-2.5 h-8 bg-gradient-to-b from-primary to-accent rounded-full shadow-[0_0_20px_rgba(99,102,241,0.4)]" />
+            <h1 className="text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-foreground via-foreground/90 to-muted-foreground/80">Infrastructure Summary</h1>
+          </div>
+          <p className="text-xs font-bold text-muted-foreground/70 uppercase tracking-[0.08em] ml-6 font-mono">
+            Cluster health monitoring and real-time synchronization throughput.
+          </p>
+        </div>
       </div>
 
       {/* Stat Cards Row */}
@@ -66,89 +73,110 @@ export default function DashboardPage() {
         <StatCard
           label="ACTIVE NODES"
           value={onlineNodes}
-          sub={`(${totalNodes} total registered)`}
+          sub={`OF ${totalNodes} REGISTERED`}
           icon={Server}
-          color="#F59E0B" // Amber
+          color="#3B82F6"
           percentage={totalNodes > 0 ? (onlineNodes / totalNodes) * 100 : 0}
+          delay="0"
         />
         <StatCard
           label="ETL PIPELINES"
           value={runningJobs}
-          sub={`(${totalJobs} total configured)`}
+          sub={`${totalJobs} TOTAL CONFIGURED`}
           icon={Activity}
-          color="#1E90FF" // Blue
+          color="#6366F1"
           percentage={totalJobs > 0 ? (runningJobs / totalJobs) * 100 : 0}
+          delay="100"
         />
         <StatCard
-          label="DATA VOLUME"
+          label="DATA THROUGHPUT"
           value={formatVolume(totalRowsUploaded)}
-          sub={totalRowsUploaded > 0 ? "Throughput volume (EST)" : "No synchronized data yet"}
+          sub="REAL-TIME VOLUME"
           icon={Database}
-          color="#00C6AD" // Teal
-          percentage={totalRowsUploaded > 0 ? 100 : 0} // Placeholder fixed percentage if active
+          color="#10B981"
+          percentage={totalRowsUploaded > 0 ? 100 : 0}
+          delay="200"
         />
         <StatCard
           label="SYSTEM UPTIME"
           value="100.0%"
-          sub="System running normally"
+          sub="ALL SERVICES OPTIMAL"
           icon={CheckCircle2}
-          color="#10B981" // Green
+          color="#8B5CF6"
           percentage={100}
+          delay="300"
         />
       </div>
 
       {/* Analytics Charts */}
-      <DashboardCharts />
+      <div>
+        <DashboardCharts />
+      </div>
 
       <div className="grid gap-6 grid-cols-1">
         {/* Registered Nodes Table */}
-        <div className="enterprise-card overflow-hidden flex flex-col">
-          <div className="px-6 py-5 border-b border-border flex items-center justify-between">
-            <h3 className="text-[10px] font-bold text-muted-foreground tracking-[0.2em] uppercase">REGISTERED NODES</h3>
+        <div className="premium-card flex flex-col">
+          <div className="px-8 py-5 border-b border-border/40 flex items-center justify-between bg-card/20">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-primary/10 text-primary border border-primary/10 shadow-[0_0_12px_rgba(99,102,241,0.05)]">
+                 <Monitor className="w-4 h-4" />
+              </div>
+              <h3 className="text-xs font-black text-foreground tracking-[0.12em] uppercase font-mono">CLUSTER NODES</h3>
+            </div>
             <button
               onClick={() => router.push("/dashboard/nodes")}
-              className="text-[10px] font-bold text-primary tracking-widest uppercase hover:underline"
+              className="px-4 py-2 rounded-xl text-[11px] font-bold text-primary tracking-wider uppercase bg-primary/5 hover:bg-primary/10 transition-all border border-primary/15 hover:shadow-lg hover:shadow-primary/5 active:scale-95 duration-300"
             >
-              VIEW ALL
+              VIEW REPOSITORY
             </button>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left">
-              <tbody className="divide-y divide-border">
+              <thead>
+                <tr className="bg-muted/15 border-b border-border/30">
+                  <th className="px-8 py-4 text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest font-mono">Node Identity</th>
+                  <th className="px-8 py-4 text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest font-mono">Network Host</th>
+                  <th className="px-8 py-4 text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest font-mono">Interface Mode</th>
+                  <th className="px-8 py-4 text-right pr-8 text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest font-mono">Connectivity</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/20">
                 {nodes.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-10 text-center text-muted-foreground/50 italic text-sm">
-                      No nodes registered in the cluster.
+                    <td colSpan={4} className="px-8 py-16 text-center text-muted-foreground/40 italic text-sm">
+                      Cluster is currently empty. No nodes registered.
                     </td>
                   </tr>
                 ) : (
                   nodes.slice(0, 5).map((node: any) => {
                     const isOnline = node.status?.toLowerCase() === 'online';
                     return (
-                      <tr key={node.id} className="hover:bg-muted/50 transition-all group">
-                        <td className="px-6 py-4 flex items-center gap-4">
-                          <div className="relative flex h-2 w-2">
-                            {isOnline && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}
+                      <tr key={node.id} className="hover:bg-primary/[0.01] dark:hover:bg-white/[0.01] transition-all group cursor-pointer duration-300">
+                        <td className="px-8 py-5 flex items-center gap-4">
+                          <div className="relative flex h-2.5 w-2.5">
+                            {isOnline && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60"></span>}
                             <span className={cn(
-                              "relative inline-flex rounded-full h-2 w-2",
-                              isOnline ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-700"
+                              "relative inline-flex rounded-full h-2.5 w-2.5 shadow-sm transition-all",
+                              isOnline ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" : "bg-slate-400/40"
                             )}></span>
                           </div>
-                          <span className="text-[14px] font-bold text-foreground">{node.id}</span>
+                          <span className="text-sm font-bold text-foreground/90 group-hover:text-primary transition-colors font-mono">{node.id}</span>
                         </td>
-                        <td className="px-6 py-4 text-[12px] font-medium text-muted-foreground font-mono">
-                          {node.hostname || "auto-detected"}
+                        <td className="px-8 py-5 text-[12px] font-semibold text-muted-foreground/85 font-mono">
+                          {node.hostname || "0.0.0.0"}
                         </td>
-                        <td className="px-6 py-4 text-[11px] font-bold text-muted-foreground/60 uppercase tracking-widest">
-                          {node.connection_mode || "DIRECT"}
+                        <td className="px-8 py-5">
+                          <span className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.15em] bg-muted/40 dark:bg-muted/30 px-2.5 py-1 rounded-lg border border-border/20">
+                            {node.connection_mode || "DIRECT"}
+                          </span>
                         </td>
-                        <td className="px-6 py-4 text-right">
+                        <td className="px-8 py-5 text-right">
                           <div className={cn(
-                            "inline-flex items-center px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest border transition-all",
+                            "inline-flex items-center px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all duration-300 shadow-sm",
                             isOnline 
-                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" 
-                              : "bg-muted text-muted-foreground border-border"
+                              ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.02)]" 
+                              : "bg-muted/60 text-muted-foreground/50 border-border/50"
                           )}>
                             {node.status?.toUpperCase() || "OFFLINE"}
                           </div>
@@ -166,42 +194,41 @@ export default function DashboardPage() {
   );
 }
 
-function StatCard({ label, value, sub, color, percentage }: any) {
+function StatCard({ label, value, sub, color, percentage, icon: Icon, delay }: any) {
   return (
-    <div className="enterprise-card p-6 relative group">
-      <div className="absolute top-4 right-4">
-        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">
-          <div className="w-1 h-1 rounded-full bg-emerald-500" />
-          <span className="text-[9px] font-bold text-emerald-500 tracking-wider">↗ ACTIVE</span>
-        </div>
-      </div>
+    <div
+      className="relative bg-card/90 dark:bg-card/45 border border-border/85 rounded-2xl p-6 overflow-hidden hover:bg-card dark:hover:bg-card/65 transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.02)] hover:shadow-lg hover:-translate-y-1 animate-in fade-in fill-mode-both group"
+      style={{ animationDelay: `${delay}ms` }}
+    >
+      {/* Left accent bar */}
+      <div className="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full" style={{ backgroundColor: color }} />
 
-      <div className="flex items-end justify-between">
-        <div className="flex-1">
-          <p className="text-[10px] font-bold text-muted-foreground tracking-[0.15em] uppercase mb-1.5">{label}</p>
-          <p className="text-[32px] font-bold text-foreground tracking-tight leading-none mb-2">{value}</p>
-          <p className="text-[12px] font-medium text-muted-foreground/60 italic">{sub}</p>
-        </div>
-
-        {/* Circular Progress Ring */}
-        <div className="relative w-16 h-16 shrink-0 transition-transform duration-500 group-hover:scale-110">
-          <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-            <circle className="stroke-muted" strokeWidth="3" fill="transparent" r="16" cx="18" cy="18" />
-            <circle
-              className="transition-all duration-1000 ease-out"
-              stroke={color}
-              strokeWidth="3"
-              strokeDasharray={`${percentage}, 100`}
-              strokeLinecap="round"
-              fill="transparent"
-              r="16"
-              cx="18"
-              cy="18"
-            />
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-[11px] font-bold text-foreground">{Math.round(percentage)}%</span>
+      <div className="pl-3.5">
+        {/* Header: icon + label + LIVE */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Icon className="w-3.5 h-3.5 shrink-0" style={{ color }} />
+            <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-[0.15em] font-mono">{label}</p>
           </div>
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-muted/20 border border-border/30">
+            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: percentage > 0 ? color : '#64748b' }} />
+            <span className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-widest font-mono">LIVE</span>
+          </div>
+        </div>
+
+        {/* Value */}
+        <p className="text-2xl font-black text-foreground tracking-tight leading-none mb-1 truncate">{value}</p>
+        <p className="text-[11px] text-muted-foreground/50 font-mono font-semibold mb-4">{sub}</p>
+
+        {/* Progress bar */}
+        <div className="h-[2px] bg-border/30 rounded-full overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all duration-1000 ease-out"
+            style={{ width: `${Math.min(percentage, 100)}%`, backgroundColor: color }}
+          />
+        </div>
+        <div className="mt-1.5 text-right">
+          <span className="text-[9px] font-black font-mono" style={{ color }}>{Math.round(percentage)}%</span>
         </div>
       </div>
     </div>

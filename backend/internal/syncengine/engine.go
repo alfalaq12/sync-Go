@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync/atomic"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/bintang/remake-dsp-backend/internal/agent/proto"
@@ -78,22 +79,40 @@ func (e *Engine) ExecuteSync(ctx context.Context, jobID int) error {
 		return fmt.Errorf("failed to load network config: %v", err)
 	}
 
+	log.Printf("[DEBUG] net.Password before decrypt: %q", net.Password)
 	// Overwrite with centralized credentials if present
 	if sCredPass != nil && *sCredPass != "" {
 		decrypted, err := utils.Decrypt(*sCredPass)
 		if err == nil {
 			net.Password = decrypted
+			log.Printf("[DEBUG] net.Password after sCredPass decrypt: %q", net.Password)
 		} else {
 			e.LogToDB(ctx, jobID, sourceNodeID, "WARNING", "Engine", "Failed to decrypt source credential, falling back to manual password")
 		}
+	} else if net.Password != "" {
+		decrypted, err := utils.Decrypt(net.Password)
+		log.Printf("[DEBUG] net.Password manual decrypt err: %v", err)
+		if err == nil {
+			net.Password = decrypted
+			log.Printf("[DEBUG] net.Password after manual decrypt: %q", net.Password)
+		}
 	}
 
+	log.Printf("[DEBUG] target.Password before decrypt: %q", target.Password)
 	if tCredPass != nil && *tCredPass != "" {
 		decrypted, err := utils.Decrypt(*tCredPass)
 		if err == nil {
 			target.Password = decrypted
+			log.Printf("[DEBUG] target.Password after tCredPass decrypt: %q", target.Password)
 		} else {
 			e.LogToDB(ctx, jobID, sourceNodeID, "WARNING", "Engine", "Failed to decrypt target credential, falling back to manual password")
+		}
+	} else if target.Password != "" {
+		decrypted, err := utils.Decrypt(target.Password)
+		log.Printf("[DEBUG] target.Password manual decrypt err: %v", err)
+		if err == nil {
+			target.Password = decrypted
+			log.Printf("[DEBUG] target.Password after manual decrypt: %q", target.Password)
 		}
 	}
 
@@ -156,7 +175,7 @@ func (e *Engine) ExecuteSync(ctx context.Context, jobID int) error {
 		upsertKeysRaw := getString(upsertKeysRawPtr)
 		incCol := getString(incColPtr)
 		if batchSize <= 0 {
-			batchSize = 5000 // default optimal buffer
+			batchSize = 50000 // default optimal buffer for 7M+ row sync
 		}
 
 		upsertKeys := []string{}
@@ -267,8 +286,8 @@ func (e *Engine) ExecuteSync(ctx context.Context, jobID int) error {
 
 		// Initialize errgroup for pipeline management
 		g, groupCtx := errgroup.WithContext(ctx)
-		// Buffered channel: size 5 as suggests for 8GB RAM specs
-		chunkChan := make(chan dataChunk, 5)
+		// Buffered channel: Increased buffer to 16 to feed multiple workers
+		chunkChan := make(chan dataChunk, 16)
 
 		// 1. PRODUCER GOROUTINE: Extraction
 		g.Go(func() error {
@@ -301,27 +320,30 @@ func (e *Engine) ExecuteSync(ctx context.Context, jobID int) error {
 			})
 		})
 
-		// 2. CONSUMER GOROUTINE: Loading
-		g.Go(func() error {
-			for pkg := range chunkChan {
-				affected, err := targetDriver.StreamLoad(groupCtx, target, tt, pkg.columns, pkg.rows, upsertKeys)
-				if err != nil {
-					return fmt.Errorf("load failure: %v", err)
+		// 2. CONSUMER GOROUTINES: Loading (Worker Pool)
+		workerCount := 8
+		for i := 0; i < workerCount; i++ {
+			g.Go(func() error {
+				for pkg := range chunkChan {
+					affected, err := targetDriver.StreamLoad(groupCtx, target, tt, pkg.columns, pkg.rows, upsertKeys)
+					if err != nil {
+						return fmt.Errorf("load failure: %v", err)
+					}
+					atomic.AddInt64(&chunkCount, affected)
+					
+					// Real-time progress tracking
+					e.LogToDB(groupCtx, jobID, targetNodeID, "INFO", "StreamFlow", fmt.Sprintf("Pipelined chunk of %d rows to target by worker", affected))
+					_, _ = e.db.Exec(groupCtx, `
+						UPDATE SD_JOBS SET 
+							rows_extracted = rows_extracted + $1, 
+							rows_uploaded = rows_uploaded + $2,
+							progress = LEAST(progress + 1, 98)
+						WHERE id = $3
+					`, len(pkg.rows), affected, jobID)
 				}
-				chunkCount += affected
-				
-				// Real-time progress tracking
-				e.LogToDB(groupCtx, jobID, targetNodeID, "INFO", "StreamFlow", fmt.Sprintf("Pipelined chunk of %d rows to target", affected))
-				_, _ = e.db.Exec(groupCtx, `
-					UPDATE SD_JOBS SET 
-						rows_extracted = rows_extracted + $1, 
-						rows_uploaded = rows_uploaded + $2,
-						progress = LEAST(progress + 1, 98)
-					WHERE id = $3
-				`, len(pkg.rows), affected, jobID)
-			}
-			return nil
-		})
+				return nil
+			})
+		}
 
 		if err := g.Wait(); err != nil {
 			e.LogToDB(ctx, jobID, sourceNodeID, "ERROR", "Engine", fmt.Sprintf("Data pipeline collapsed: %v", err))
