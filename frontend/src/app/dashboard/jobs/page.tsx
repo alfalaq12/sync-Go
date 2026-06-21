@@ -129,8 +129,8 @@ export default function JobsPage() {
   }
 
   const formatDuration = (seconds: number | null | undefined): string => {
-    if (seconds == null || seconds < 0) return "\u2014";
-    const totalSec = Math.floor(seconds);
+    if (seconds == null) return "—";
+    const totalSec = Math.max(0, Math.floor(seconds));
     if (totalSec < 60) return `${totalSec}d`;
     const hours = Math.floor(totalSec / 3600);
     const minutes = Math.floor((totalSec % 3600) / 60);

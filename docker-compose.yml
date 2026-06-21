@@ -14,7 +14,7 @@ services:
   #     - pgdata:/var/lib/postgresql/data
   #   restart: unless-stopped
   #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U postgres -d dsp"]
+  #     test: [ "CMD-SHELL", "pg_isready -U postgres -d dsp" ]
   #     interval: 10s
   #     timeout: 5s
   #     retries: 5
@@ -27,7 +27,7 @@ services:
     environment:
       - PORT=8080
       - GRPC_PORT=9090
-      - DATABASE_URL=postgres://postgres:B1ntang12!%40%23@host.docker.internal:5433/dsp?sslmode=disable
+      - DATABASE_URL=postgres://postgres:3w6%25JPcClvS%24_pGSQL@117.53.44.215:5324/dsp?sslmode=disable
       - JWT_SECRET=supersecret-dsp-key-change-in-production
       - TLS_ENABLED=true
       - TLS_CA_PATH=/app/certs/ca.crt
@@ -69,7 +69,7 @@ services:
       - TLS_CERT_PATH=/app/certs/client.crt
       - TLS_KEY_PATH=/app/certs/client.key
       - DB_DRIVER=postgres
-      - DB_URL=postgres://postgres:B1ntang12!%40%23@host.docker.internal:5433/dsp?sslmode=disable
+      - DB_URL=postgres://postgres:3w6%25JPcClvS%24_pGSQL@117.53.44.215:5324/dsp?sslmode=disable
     volumes:
       - ./certs:/app/certs:ro
     extra_hosts:
@@ -109,5 +109,5 @@ services:
       - backend
     restart: unless-stopped
 
-# volumes:
-#   pgdata:
+volumes:
+  pgdata:
