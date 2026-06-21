@@ -201,7 +201,7 @@ func (h *JobHandler) StartJob(c *gin.Context) {
 	id := c.Param("id")
 	idInt, _ := strconv.Atoi(id)
 	tag, err := h.db.Exec(c.Request.Context(), `
-		UPDATE SD_JOBS SET status='running', started_at=NOW(), progress=0, error_message=NULL, updated_at=NOW()
+		UPDATE SD_JOBS SET status='running', started_at=NOW(), completed_at=NULL, progress=0, error_message=NULL, updated_at=NOW()
 		WHERE id=$1 AND status IN ('pending', 'failed', 'completed')
 	`, idInt)
 	if err != nil {
