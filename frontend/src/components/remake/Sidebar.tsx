@@ -66,7 +66,7 @@ const menuData: NavItem[] = [
         title: "Settings", 
         icon: Settings,
         items: [
-          { title: "Settings", icon: Settings, href: "/dashboard/coming-soon/consolidation-settings" },
+          { title: "Settings", icon: Settings, href: "/dashboard/consolidation-settings" },
           { 
             title: "Agent Settings", 
             icon: Settings,
