@@ -154,7 +154,7 @@ export function DashboardCharts() {
                   }}
                   itemStyle={{ color: colors.primary, letterSpacing: "0.5px" }}
                 />
-                <Bar dataKey="volume" radius={[5, 5, 0, 0]} activeBar={{ fill: colors.primary, radius: [5, 5, 0, 0] }}>
+                <Bar dataKey="volume" radius={[5, 5, 0, 0]} activeBar={{ fill: colors.primary }}>
                   {getVolumeData().map((entry: any, index: number, arr: any[]) => (
                     <Cell 
                       key={`cell-${index}`} 
