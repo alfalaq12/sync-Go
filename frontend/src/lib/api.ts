@@ -104,7 +104,7 @@ export const deletePolicy = (id: string) => api.delete(`/policies/${id}`).then((
 
 // ─── Stats ───────────────────────────────────────────────
 export const fetchMetrics = (range = "24h") => api.get(`/stats/metrics?range=${range}`).then((r) => r.data);
-export const fetchVolumeHistory = (range = "30d") => api.get(`/stats/volume?range=${range}`).then((r) => r.data);
+export const fetchVolumeHistory = (range = "24h") => api.get(`/stats/volume?range=${range}`).then((r) => r.data);
 
 // ─── System / Master ──────────────────────────────────────
 export const fetchSystemSettings = () => api.get("/system/settings").then((r) => r.data);
@@ -117,6 +117,7 @@ export const runHostMigration = (data: any) => api.post("/system/host-migration"
 export const testAuthWS = (data: any) => api.post("/system/authws/test", data).then((r) => r.data);
 
 // ─── DB Console ──────────────────────────────────────────
-export const executeDBQuery = (query: string) => api.post("/system/db-console/query", { query }).then((r) => r.data);
+export const fetchDBConsoleSources = () => api.get("/system/db-console/sources").then((r) => r.data);
+export const executeDBQuery = (query: string, connection_ref: string = "internal") => api.post("/system/db-console/query", { query, connection_ref }).then((r) => r.data);
 
 export default api;

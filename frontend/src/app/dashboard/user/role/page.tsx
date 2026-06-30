@@ -12,6 +12,8 @@ import { Pagination } from "@/components/remake/Pagination";
 export default function RolePage() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"create" | "edit" | "view">("create");
@@ -36,6 +38,9 @@ export default function RolePage() {
     String(r.id).toLowerCase().includes(searchTerm.toLowerCase()) ||
     String(r.name).toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const totalPages = Math.max(1, Math.ceil(filteredRoles.length / PAGE_SIZE));
+  const paginatedRoles = filteredRoles.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   // Mutations
   const createMutation = useMutation({
@@ -155,7 +160,7 @@ export default function RolePage() {
                 type="text"
                 placeholder="Search feature or data..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                 className="w-full h-11 pl-11 pr-4 rounded-lg border border-border bg-card text-[13px] font-medium text-foreground focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none"
               />
           </div>
@@ -191,7 +196,7 @@ export default function RolePage() {
                   </td>
                 </tr>
               )}
-              {!isLoading && filteredRoles.map((r: any) => {
+              {!isLoading && paginatedRoles.map((r: any) => {
                 const isSelected = selectedRoleId === r.id;
                 return (
                   <tr
@@ -255,11 +260,11 @@ export default function RolePage() {
 
         {/* Pagination */}
         <Pagination 
-          currentPage={1}
-          totalPages={Math.max(1, Math.ceil(roles.length / 10))}
-          onPageChange={() => {}}
-          totalItems={roles.length}
-          pageSize={10}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={filteredRoles.length}
+          pageSize={PAGE_SIZE}
         />
       </div>
 

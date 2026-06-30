@@ -173,6 +173,7 @@ func SetupRouter(db *pgxpool.Pool, cfg *config.Config) *gin.Engine {
 		protected.POST("/system/host-migration", systemHandler.HostMigration)
 
 		// DB Console
+		protected.GET("/system/db-console/sources", dbConsoleHandler.GetDBConsoleSources)
 		protected.POST("/system/db-console/query", dbConsoleHandler.ExecuteQuery)
 	}
 

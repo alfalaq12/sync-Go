@@ -28,6 +28,8 @@ export default function JobsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
 
@@ -64,6 +66,9 @@ export default function JobsPage() {
     (job.st_job_id && job.st_job_id.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (job.id && String(job.id).includes(searchTerm))
   );
+
+  const totalPages = Math.max(1, Math.ceil(filteredJobs.length / PAGE_SIZE));
+  const paginatedJobs = filteredJobs.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const doAction = async (action: () => Promise<any>, successMsg: string) => {
     try {
@@ -181,7 +186,7 @@ export default function JobsPage() {
               type="text" 
               placeholder="Search pipeline..." 
               value={searchTerm} 
-              onChange={(e) => setSearchTerm(e.target.value)} 
+              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} 
               className="w-full h-11 pl-11 pr-4 rounded-lg border border-border bg-card text-[13px] font-medium text-foreground focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none" 
             />
           </div>
@@ -231,7 +236,7 @@ export default function JobsPage() {
                   </td>
                 </tr>
               )}
-              {filteredJobs.map((job: any) => {
+              {paginatedJobs.map((job: any) => {
                 const conf = getStatusConfig(job.status);
                 const isSelected = selectedJobId === job.id;
                 return (
@@ -369,11 +374,11 @@ export default function JobsPage() {
 
         {/* Pagination */}
         <Pagination 
-          currentPage={1}
-          totalPages={Math.ceil(total / 10) || 1}
-          onPageChange={() => {}}
-          totalItems={total}
-          pageSize={10}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={filteredJobs.length}
+          pageSize={PAGE_SIZE}
         />
 
       </div>

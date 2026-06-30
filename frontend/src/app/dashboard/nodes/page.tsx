@@ -30,6 +30,8 @@ export default function NodesPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
 
@@ -80,6 +82,9 @@ export default function NodesPage() {
     (node.hostname && node.hostname.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (node.node_name && node.node_name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  const totalPages = Math.max(1, Math.ceil(filteredNodes.length / PAGE_SIZE));
+  const paginatedNodes = filteredNodes.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const handleDelete = () => {
     if (!selectedNode) return;
@@ -145,7 +150,7 @@ export default function NodesPage() {
               type="text" 
               placeholder="Search by ID, Code, Name, or IP..." 
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
               className="w-full h-11 pl-11 pr-4 rounded-lg border border-border bg-card text-[13px] font-medium text-foreground focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all outline-none"
             />
           </div>
@@ -198,7 +203,7 @@ export default function NodesPage() {
                   </td>
                 </tr>
               )}
-              {filteredNodes.map((node: any) => {
+              {paginatedNodes.map((node: any) => {
                 const isSelected = selectedNodeId === String(node.id);
                 return (
                   <tr 
@@ -291,11 +296,11 @@ export default function NodesPage() {
 
         {/* Pagination */}
         <Pagination 
-          currentPage={1}
-          totalPages={Math.ceil(total / 10) || 1}
-          onPageChange={() => {}}
-          totalItems={total}
-          pageSize={10}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={filteredNodes.length}
+          pageSize={PAGE_SIZE}
         />
       </div>
     </div>

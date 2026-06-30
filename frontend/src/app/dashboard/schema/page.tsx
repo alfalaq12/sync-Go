@@ -28,6 +28,8 @@ export default function SchemaPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
   const [selectedSchemaId, setSelectedSchemaId] = useState<string | null>(null);
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
 
@@ -97,6 +99,9 @@ export default function SchemaPage() {
     schema.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const totalPages = Math.max(1, Math.ceil(filteredSchemas.length / PAGE_SIZE));
+  const paginatedSchemas = filteredSchemas.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
   return (
     <div className="p-8 max-w-[1200px] mx-auto animate-in fade-in duration-500">
       <Breadcrumbs />
@@ -136,7 +141,7 @@ export default function SchemaPage() {
               type="text" 
               placeholder="Search schema structure..." 
               value={searchTerm} 
-              onChange={(e) => setSearchTerm(e.target.value)} 
+              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} 
               className="w-full h-11 pl-11 pr-4 rounded-lg border border-border bg-card text-[13px] font-medium text-foreground focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none" 
             />
           </div>
@@ -172,7 +177,7 @@ export default function SchemaPage() {
                   </td>
                 </tr>
               )}
-              {filteredSchemas.map((schema: any) => {
+              {paginatedSchemas.map((schema: any) => {
                 const isSelected = selectedSchemaId === schema.id;
                 return (
                   <tr
@@ -245,11 +250,11 @@ export default function SchemaPage() {
 
         {/* Pagination */}
         <Pagination 
-          currentPage={1}
-          totalPages={Math.ceil(total / 10) || 1}
-          onPageChange={() => {}}
-          totalItems={total}
-          pageSize={10}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={filteredSchemas.length}
+          pageSize={PAGE_SIZE}
         />
       </div>
     </div>

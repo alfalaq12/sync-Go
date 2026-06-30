@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Terminal, Play, RotateCcw, Copy, Trash2, Database, Table, Clock, AlertTriangle, ChevronRight, Check } from "lucide-react";
+import { Terminal, Play, RotateCcw, Copy, Trash2, Database, Table, Clock, AlertTriangle, ChevronRight, Check, Server, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { executeDBQuery } from "@/lib/api";
+import { executeDBQuery, fetchDBConsoleSources } from "@/lib/api";
 import { Breadcrumbs } from "@/components/remake/Breadcrumbs";
 
 export default function DBConsolePage() {
@@ -20,6 +20,8 @@ export default function DBConsolePage() {
   
   const [history, setHistory] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
+  const [sources, setSources] = useState<any[]>([]);
+  const [connectionRef, setConnectionRef] = useState("internal");
 
   useEffect(() => {
     // Load history from localStorage
@@ -27,6 +29,13 @@ export default function DBConsolePage() {
     if (saved) {
       try { setHistory(JSON.parse(saved)); } catch (e) {}
     }
+
+    // Fetch data sources
+    fetchDBConsoleSources()
+      .then(res => {
+        if (res.sources) setSources(res.sources);
+      })
+      .catch(err => console.error("Failed to fetch DB console sources", err));
   }, []);
 
   const saveHistory = (q: string) => {
@@ -41,7 +50,7 @@ export default function DBConsolePage() {
     setIsExecuting(true);
     setResult(null);
     try {
-      const data = await executeDBQuery(query);
+      const data = await executeDBQuery(query, connectionRef);
       setResult(data);
       saveHistory(query);
     } catch (err: any) {
@@ -103,7 +112,30 @@ export default function DBConsolePage() {
           </div>
           <p className="text-[14px] font-medium text-muted-foreground">Execute read-only SQL queries directly against the Master internal database.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Server className="w-4 h-4 text-muted-foreground" />
+            <div className="relative">
+              <select
+                value={connectionRef}
+                onChange={(e) => {
+                  setConnectionRef(e.target.value);
+                  setResult(null); // Clear results on DB change
+                }}
+                className="appearance-none h-9 pl-3 pr-10 rounded-md bg-card border border-border text-sm font-semibold focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all w-[240px] truncate"
+              >
+                <option value="internal">DSP Master Database</option>
+                {sources.map(src => (
+                  <option key={src.ref} value={src.ref}>
+                    {src.name} - {src.database}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
+                <ChevronDown className="w-4 h-4" />
+              </div>
+            </div>
+          </div>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-500">
             <AlertTriangle className="w-4 h-4" />
             <span className="text-[11px] font-bold uppercase tracking-widest">Select Only Allowed</span>
@@ -115,23 +147,31 @@ export default function DBConsolePage() {
         {/* Left Sidebar */}
         <div className="w-64 shrink-0 flex flex-col gap-6 overflow-y-auto premium-scrollbar pr-2">
           
-          <div className="enterprise-card p-4">
-            <h3 className="text-[11px] font-black uppercase tracking-widest text-muted-foreground mb-4 flex items-center gap-2">
-              <Database className="w-3.5 h-3.5" /> Schema Reference
-            </h3>
-            <div className="space-y-1">
-              {schemaTables.map(t => (
-                <button
-                  key={t.name}
-                  onClick={() => setQuery(`SELECT * FROM ${t.name} LIMIT 50;`)}
-                  className="w-full text-left px-3 py-2 rounded-md hover:bg-primary/10 hover:text-primary group transition-all"
-                >
-                  <div className="font-mono text-[12px] font-bold text-foreground group-hover:text-primary">{t.name}</div>
-                  <div className="text-[10px] text-muted-foreground">{t.desc}</div>
-                </button>
-              ))}
+          {connectionRef === "internal" ? (
+            <div className="enterprise-card p-4">
+              <h3 className="text-[11px] font-black uppercase tracking-widest text-muted-foreground mb-4 flex items-center gap-2">
+                <Database className="w-3.5 h-3.5" /> Schema Reference
+              </h3>
+              <div className="space-y-1">
+                {schemaTables.map(t => (
+                  <button
+                    key={t.name}
+                    onClick={() => setQuery(`SELECT * FROM ${t.name} LIMIT 50;`)}
+                    className="w-full text-left px-3 py-2 rounded-md hover:bg-primary/10 hover:text-primary group transition-all"
+                  >
+                    <div className="font-mono text-[12px] font-bold text-foreground group-hover:text-primary">{t.name}</div>
+                    <div className="text-[10px] text-muted-foreground">{t.desc}</div>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="enterprise-card p-4 flex flex-col items-center justify-center text-center opacity-70">
+              <Database className="w-8 h-8 text-muted-foreground mb-3" />
+              <h3 className="text-sm font-bold text-foreground mb-1">External Database</h3>
+              <p className="text-[11px] text-muted-foreground">Schema auto-fetch is disabled for external sources. Please query tables directly.</p>
+            </div>
+          )}
 
           <div className="enterprise-card p-4 flex-1">
             <h3 className="text-[11px] font-black uppercase tracking-widest text-muted-foreground mb-4 flex items-center gap-2">

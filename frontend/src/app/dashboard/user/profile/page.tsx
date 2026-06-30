@@ -6,11 +6,14 @@ import { User, Search, Plus, Edit, Eye, Trash2, KeyRound, RefreshCw, Loader2, X,
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchUsers, createUser, updateUser, deleteUser, fetchRoles } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { Pagination } from "@/components/remake/Pagination";
 import { Breadcrumbs } from "@/components/remake/Breadcrumbs";
 
 export default function ProfilePage() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"create" | "edit" | "view">("create");
@@ -44,6 +47,9 @@ export default function ProfilePage() {
     String(u.id).toLowerCase().includes(searchTerm.toLowerCase()) || 
     String(u.name).toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
+  const paginatedUsers = filteredUsers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   // Mutations
   const createMutation = useMutation({
@@ -162,7 +168,7 @@ export default function ProfilePage() {
                 type="text" 
                 placeholder="Search user..." 
                 value={searchTerm} 
-                onChange={(e) => setSearchTerm(e.target.value)} 
+                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} 
                 className="w-full h-11 pl-11 pr-4 rounded-lg border border-border bg-card text-[13px] font-medium text-foreground focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none" 
               />
             </div>
@@ -201,7 +207,7 @@ export default function ProfilePage() {
                    </td>
                  </tr>
                )}
-               {!isLoading && filteredUsers.map((u: any) => (
+               {!isLoading && paginatedUsers.map((u: any) => (
                  <tr 
                    key={u.id} 
                    onClick={() => setSelectedUserId(u.id)}
@@ -262,6 +268,15 @@ export default function ProfilePage() {
              </button>
           </div>
         </div>
+
+        {/* Pagination */}
+        <Pagination 
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={filteredUsers.length}
+          pageSize={PAGE_SIZE}
+        />
       </div>
 
       {/* Modal - Create/Edit */}

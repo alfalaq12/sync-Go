@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchSessions } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Breadcrumbs } from "@/components/remake/Breadcrumbs";
+import { Pagination } from "@/components/remake/Pagination";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 
@@ -23,6 +24,8 @@ const swalTheme = {
 export default function SessionsPage() {
   const queryClient = useQueryClient();
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   const { data: sessionsData, isLoading, refetch, isFetching } = useQuery({
     queryKey: ["sessions"],
@@ -49,6 +52,8 @@ export default function SessionsPage() {
   };
 
   const sessions = sessionsData?.data || [];
+  const totalPages = Math.max(1, Math.ceil(sessions.length / PAGE_SIZE));
+  const paginatedSessions = sessions.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   return (
     <div className="p-8 max-w-[1200px] mx-auto animate-in fade-in duration-500">
@@ -93,7 +98,7 @@ export default function SessionsPage() {
                      </td>
                    </tr>
                 )}
-                {!isLoading && sessions.map((sess: any) => (
+                {!isLoading && paginatedSessions.map((sess: any) => (
                   <tr key={sess.id} className="hover:bg-muted/50 transition-all">
                     <td className="px-6 py-4.5 font-mono text-[12px] text-foreground font-medium">{sess.id}</td>
                     <td className="px-6 py-4.5 text-muted-foreground">{sess.ip}</td>
@@ -107,6 +112,15 @@ export default function SessionsPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        <Pagination 
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={sessions.length}
+          pageSize={PAGE_SIZE}
+        />
       </div>
     </div>
   );

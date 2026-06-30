@@ -12,6 +12,8 @@ import { Pagination } from "@/components/remake/Pagination";
 export default function PolicyPage() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
   const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"create" | "edit" | "view">("create");
@@ -38,6 +40,9 @@ export default function PolicyPage() {
     String(p.id).toLowerCase().includes(searchTerm.toLowerCase()) || 
     String(p.name).toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const totalPages = Math.max(1, Math.ceil(filteredPolicies.length / PAGE_SIZE));
+  const paginatedPolicies = filteredPolicies.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   // Mutations
   const createMutation = useMutation({
@@ -161,7 +166,7 @@ export default function PolicyPage() {
                 type="text" 
                 placeholder="Search policies..." 
                 value={searchTerm} 
-                onChange={(e) => setSearchTerm(e.target.value)} 
+                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} 
                 className="w-full h-11 pl-11 pr-4 rounded-lg border border-border bg-card text-[13px] font-medium text-foreground focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none" 
               />
           </div>
@@ -198,7 +203,7 @@ export default function PolicyPage() {
                       </td>
                     </tr>
                   )}
-                  {!isLoading && filteredPolicies.map((p: any) => {
+                  {!isLoading && paginatedPolicies.map((p: any) => {
                     const isSelected = selectedPolicyId === p.id;
                     return (
                       <tr 
@@ -267,11 +272,11 @@ export default function PolicyPage() {
 
         {/* Pagination */}
         <Pagination 
-          currentPage={1}
-          totalPages={Math.max(1, Math.ceil(policies.length / 10))}
-          onPageChange={() => {}}
-          totalItems={policies.length}
-          pageSize={10}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={filteredPolicies.length}
+          pageSize={PAGE_SIZE}
         />
       </div>
 

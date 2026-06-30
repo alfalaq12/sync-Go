@@ -29,6 +29,8 @@ export default function CredentialsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
   const [selectedCredId, setSelectedCredId] = useState<string | null>(null);
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
 
@@ -75,6 +77,9 @@ export default function CredentialsPage() {
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.username.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const totalPages = Math.max(1, Math.ceil(filteredCreds.length / PAGE_SIZE));
+  const paginatedCreds = filteredCreds.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const handleDelete = () => {
     if (!selectedCred) return;
@@ -203,7 +208,7 @@ export default function CredentialsPage() {
               type="text" 
               placeholder="Search by name or username..." 
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
               className="w-full h-11 pl-11 pr-4 rounded-lg border border-border bg-card text-[13px] font-medium text-foreground focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all outline-none"
             />
           </div>
@@ -243,7 +248,7 @@ export default function CredentialsPage() {
                   </td>
                 </tr>
               )}
-              {filteredCreds.map((cred: any) => {
+              {paginatedCreds.map((cred: any) => {
                 const isSelected = selectedCredId === String(cred.id);
                 return (
                   <tr 
@@ -312,11 +317,11 @@ export default function CredentialsPage() {
 
         {/* Pagination placeholder as total is not defined similarly to other pages yet */}
         <Pagination 
-          currentPage={1}
-          totalPages={1}
-          onPageChange={() => {}}
-          totalItems={credentials.length}
-          pageSize={10}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={filteredCreds.length}
+          pageSize={PAGE_SIZE}
         />
       </div>
     </div>

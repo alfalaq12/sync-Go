@@ -56,6 +56,21 @@ const menuData: NavItem[] = [
       { title: "AuthWS", icon: Webhook, href: "/dashboard/master/authws" },
       { title: "Demo", icon: Play, href: "/dashboard/master/demo" },
       { title: "Host Migration", icon: Globe, href: "/dashboard/master/host-migration" },
+      { title: "Download", icon: Download, href: "/dashboard/master/download" },
+      { title: "External Logging", icon: FileText, href: "/dashboard/master/external-logging" },
+      { title: "SMS Auth", icon: Shield, href: "/dashboard/master/sms-auth" },
+      { title: "SMS Gateway", icon: Webhook, href: "/dashboard/master/sms-gateway" },
+      { title: "DB CONSOLE", icon: Terminal, href: "/dashboard/master/db-console" },
+      { title: "Regex Console", icon: Terminal, href: "/dashboard/master/regex-console" },
+      { title: "XML Console", icon: Code2, href: "/dashboard/master/xml-console" },
+      { title: "Regex Job SIM", icon: Cpu, href: "/dashboard/master/regex-job-sim" },
+      { title: "CRYPTO TEST", icon: Shield, href: "/dashboard/master/crypto-test" },
+      { title: "Data Sources", icon: Database, href: "/dashboard/master/data-sources" },
+      { title: "TEXTDB Query", icon: Search, href: "/dashboard/master/textdb-query" },
+      { title: "Script Console", icon: Terminal, href: "/dashboard/master/script-console" },
+      { title: "SA NODES", icon: Server, href: "/dashboard/master/sa-nodes" },
+      { title: "SA CHANNELS", icon: Share2, href: "/dashboard/master/sa-channels" },
+      { title: "SA VFS", icon: Database, href: "/dashboard/master/sa-vfs" }
     ],
   },
   {
@@ -66,17 +81,7 @@ const menuData: NavItem[] = [
         title: "Settings", 
         icon: Settings,
         items: [
-          { title: "Settings", icon: Settings, href: "/dashboard/consolidation-settings" },
-          { 
-            title: "Agent Settings", 
-            icon: Settings,
-            items: [
-              { title: "Download", icon: Download, href: "/dashboard/coming-soon/download" },
-              { title: "External Logging", icon: FileText, href: "/dashboard/coming-soon/external-logging" },
-              { title: "SMS Auth", icon: Shield, href: "/dashboard/coming-soon/sms-auth" },
-              { title: "SMS Gateway", icon: Webhook, href: "/dashboard/coming-soon/sms-gateway" },
-            ] 
-          },
+          { title: "Settings", icon: Settings, href: "/dashboard/consolidation-settings" }
         ] 
       },
       { title: "SCHEMA", icon: Database, href: "/dashboard/schema" },
@@ -84,24 +89,7 @@ const menuData: NavItem[] = [
       { title: "JOBS", icon: Activity, href: "/dashboard/jobs" },
       { title: "NODES", icon: Server, href: "/dashboard/nodes" },
       { title: "VAULT", icon: Key, href: "/dashboard/credentials" },
-      { title: "DB CONSOLE", icon: Terminal, href: "/dashboard/coming-soon/db-console" },
-      { title: "LOG Viewer", icon: FileText, href: "/dashboard/logs" },
-      { title: "Regex Console", icon: Terminal, href: "/dashboard/coming-soon/regex-console" },
-      { title: "XML Console", icon: Code2, href: "/dashboard/coming-soon/xml-console" },
-      { title: "Regex Job SIM", icon: Cpu, href: "/dashboard/coming-soon/regex-job-sim" },
-      { title: "CRYPTO TEST", icon: Shield, href: "/dashboard/coming-soon/crypto-test" },
-      { title: "Data Sources", icon: Database, href: "/dashboard/coming-soon/data-sources" },
-      { title: "TEXTDB Query", icon: Search, href: "/dashboard/coming-soon/textdb-query" },
-      { title: "Script Console", icon: Terminal, href: "/dashboard/coming-soon/script-console" },
-    ],
-  },
-  {
-    title: "SECURE ACCESS",
-    section: true,
-    items: [
-      { title: "SA NODES", icon: Server, href: "/dashboard/coming-soon/sa-nodes" },
-      { title: "SA CHANNELS", icon: Share2, href: "/dashboard/coming-soon/sa-channels" },
-      { title: "SA VFS", icon: Database, href: "/dashboard/coming-soon/sa-vfs" }
+      { title: "LOG Viewer", icon: FileText, href: "/dashboard/logs" }
     ]
   }
 ];

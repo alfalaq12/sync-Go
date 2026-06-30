@@ -48,46 +48,46 @@ export default function DashboardLayout({
         isCollapsed ? "lg:ml-[80px]" : "lg:ml-[260px]"
       )}>
         
-        {/* Top bar (76px) - Sticky & Glassmorphic */}
-        <header className="h-[76px] bg-card/90 dark:bg-slate-950/60 backdrop-blur-xl sticky top-0 flex items-center justify-between px-6 lg:px-10 z-40 shrink-0 border-b border-border/85 shadow-[0_4px_20px_rgba(0,0,0,0.02)] transition-colors duration-300">
+        {/* Top bar - Sticky & Glassmorphic */}
+        <header className="h-[64px] bg-card/85 dark:bg-card/50 backdrop-blur-xl sticky top-0 flex items-center justify-between px-6 lg:px-8 z-40 shrink-0 border-b border-border/60 shadow-[0_1px_8px_rgba(0,0,0,0.02)] transition-colors duration-300">
           <div className="flex items-center gap-4">
             {/* Mobile Menu Toggle */}
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="lg:hidden p-2.5 rounded-2xl hover:bg-white/10 dark:hover:bg-white/[0.05] text-muted-foreground hover:text-foreground transition-all active:scale-95 border border-transparent hover:border-border"
+              className="lg:hidden p-2 rounded-xl hover:bg-muted/60 dark:hover:bg-white/[0.05] text-muted-foreground hover:text-foreground transition-all active:scale-95 border border-transparent hover:border-border/40"
             >
               {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
 
             {/* Region Indicator */}
-            <div className="hidden sm:flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/15 shadow-[0_0_15px_rgba(16,185,129,0.05)] transition-all hover:border-emerald-500/30">
-              <div className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"></span>
+            <div className="hidden sm:flex items-center gap-2.5 px-4 py-2 rounded-xl bg-secondary/8 border border-secondary/12 transition-all hover:border-secondary/25">
+              <div className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-60"></span>
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-secondary shadow-[0_0_6px_rgba(45,212,168,0.5)]"></span>
               </div>
-              <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 tracking-[0.1em] uppercase font-mono">Jakarta-Region-01</span>
-              <span className="text-[10px] font-black text-emerald-500/80 tracking-widest bg-emerald-500/15 px-2 py-0.5 rounded-lg border border-emerald-500/10">MASTER ACTIVE</span>
+              <span className="text-[10px] font-bold text-secondary tracking-wide uppercase font-mono">Jakarta-Region-01</span>
+              <span className="text-[9px] font-bold text-secondary/70 tracking-wider bg-secondary/10 px-2 py-0.5 rounded-md border border-secondary/8">Active</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-6">
             {/* Search Box Trigger */}
             <div 
               onClick={() => setIsSearchOpen(true)}
               className="relative group cursor-pointer hidden md:block animate-in fade-in duration-300"
             >
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/40 group-hover:text-primary transition-colors z-10" />
-              <div className="bg-card/40 hover:bg-card/80 backdrop-blur-md border border-border/50 rounded-2xl pl-11 pr-14 py-2.5 text-[13px] text-muted-foreground/70 hover:border-primary/45 w-[330px] font-semibold transition-all flex items-center justify-between shadow-sm group-hover:shadow-[0_8px_25px_rgba(99,102,241,0.05)] hover:-translate-y-0.5 duration-300">
-                <span>Search features or telemetry...</span>
-                <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                   <kbd className="px-1.5 py-0.5 rounded-md border border-border bg-muted/50 text-[9px] font-black tracking-widest font-mono">CTRL</kbd>
-                   <kbd className="px-1.5 py-0.5 rounded-md border border-border bg-muted/50 text-[9px] font-black tracking-widest font-mono">K</kbd>
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/35 group-hover:text-primary transition-colors z-10" />
+              <div className="bg-muted/40 dark:bg-muted/20 hover:bg-muted/60 dark:hover:bg-muted/30 border border-border/40 rounded-xl pl-10 pr-12 py-2 text-[12px] text-muted-foreground/60 hover:border-primary/30 w-[280px] font-medium transition-all flex items-center justify-between hover:-translate-y-0.5 duration-300">
+                <span>Search features...</span>
+                <div className="flex items-center gap-0.5 opacity-50 group-hover:opacity-100 transition-opacity">
+                   <kbd className="px-1.5 py-0.5 rounded-md border border-border bg-muted/50 text-[9px] font-bold tracking-wider font-mono">⌘</kbd>
+                   <kbd className="px-1.5 py-0.5 rounded-md border border-border bg-muted/50 text-[9px] font-bold tracking-wider font-mono">K</kbd>
                 </div>
               </div>
             </div>
             
             {/* Theme & User Dropdown */}
-            <div className="flex items-center gap-6 border-l border-border pl-8">
+            <div className="flex items-center gap-4 border-l border-border/40 pl-6">
               <ThemeToggle />
               <UserDropdown />
             </div>
@@ -95,8 +95,8 @@ export default function DashboardLayout({
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto premium-scrollbar p-6 lg:p-10 relative cyber-grid">
-           <div className="max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-6 duration-700 ease-out">
+        <main className="flex-1 overflow-y-auto premium-scrollbar p-6 lg:p-8 relative">
+           <div className="max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
              {children}
            </div>
         </main>

@@ -44,66 +44,66 @@
 
 @layer base {
   :root {
-    --background: #f1f5f9; /* Slate 100: provides higher contrast, making white cards pop */
+    --background: #f0f2f5; /* Slate Mist: warmer than cold slate-100 */
     --foreground: #0f172a;
     --card: #ffffff;
     --card-foreground: #0f172a;
     --popover: #ffffff;
     --popover-foreground: #0f172a;
-    --primary: #4f46e5;
+    --primary: #4f6ef7; /* Sapphire: warmer blue with more character */
     --primary-foreground: #ffffff;
-    --secondary: #10b981;
+    --secondary: #2dd4a8; /* Teal Signal: vivid health indicator */
     --secondary-foreground: #ffffff;
-    --muted: #f1f5f9;
-    --muted-foreground: #475569; /* Slate 600: better readability than #64748b */
-    --accent: #6366f1;
+    --muted: #eef0f4;
+    --muted-foreground: #475569;
+    --accent: #6b8af9; /* Sapphire lighter variant */
     --accent-foreground: #ffffff;
     --destructive: #ef4444;
     --destructive-foreground: #ffffff;
-    --border: #e2e8f0;
-    --input: #e2e8f0;
-    --ring: #4f46e5;
+    --border: #dfe3ea;
+    --input: #dfe3ea;
+    --ring: #4f6ef7;
     --radius: 1rem;
     --sidebar: #0b1329;
     --sidebar-foreground: #f8fafc;
-    --sidebar-primary: #4f46e5;
+    --sidebar-primary: #4f6ef7;
     --sidebar-primary-foreground: #ffffff;
     --sidebar-accent: #111e3b;
     --sidebar-accent-foreground: #ffffff;
     --sidebar-border: #152547;
-    --sidebar-ring: #4f46e5;
+    --sidebar-ring: #4f6ef7;
 
-    /* Mesh Gradient Colors Light - Beautiful soft glowing hues */
-    --mesh-1: rgba(99, 102, 241, 0.08); /* 8% indigo */
-    --mesh-2: rgba(139, 92, 246, 0.07); /* 7% violet instead of green for a sweeter look */
-    --mesh-3: rgba(6, 182, 212, 0.08); /* 8% cyan */
+    /* Mesh Gradient Colors Light */
+    --mesh-1: rgba(79, 110, 247, 0.07); /* Sapphire wash */
+    --mesh-2: rgba(45, 212, 168, 0.05); /* Teal Signal wash */
+    --mesh-3: rgba(107, 138, 249, 0.06); /* Sapphire light wash */
   }
 
   .dark {
-    --background: #060b16;
-    --foreground: #f9fafb;
-    --card: #0e172a;
-    --card-foreground: #f9fafb;
-    --popover: #0e172a;
-    --popover-foreground: #f9fafb;
-    --primary: #6366f1;
+    --background: #09101d; /* Obsidian: deep, velvety dark */
+    --foreground: #f4f5f7;
+    --card: #1a2332; /* Graphite: perceptible depth layer */
+    --card-foreground: #f4f5f7;
+    --popover: #1a2332;
+    --popover-foreground: #f4f5f7;
+    --primary: #6b8af9; /* Sapphire lighter for dark mode contrast */
     --primary-foreground: #ffffff;
-    --secondary: #10b981;
+    --secondary: #2dd4a8; /* Teal Signal */
     --secondary-foreground: #ffffff;
-    --muted: #1e293b;
-    --muted-foreground: #9ca3af;
-    --accent: #818cf8;
+    --muted: #1e2a3a;
+    --muted-foreground: #8b95a5;
+    --accent: #8da2fb;
     --accent-foreground: #ffffff;
     --destructive: #f87171;
     --destructive-foreground: #ffffff;
-    --border: #152547;
-    --input: #1e293b;
-    --ring: #6366f1;
+    --border: #1e2e45;
+    --input: #1e2a3a;
+    --ring: #6b8af9;
 
     /* Mesh Gradient Colors Dark */
-    --mesh-1: rgba(99, 102, 241, 0.12);
-    --mesh-2: rgba(16, 185, 129, 0.08);
-    --mesh-3: rgba(6, 182, 212, 0.12);
+    --mesh-1: rgba(79, 110, 247, 0.10); /* Sapphire glow */
+    --mesh-2: rgba(45, 212, 168, 0.06); /* Teal signal glow */
+    --mesh-3: rgba(107, 138, 249, 0.08);
   }
 
   * {
@@ -138,6 +138,49 @@
   66% { transform: translate(-20px, 20px) scale(0.95); }
 }
 
+@keyframes health-orb-drift {
+  0%, 100% { 
+    transform: translate(0, 0) scale(1);
+    opacity: 0.55;
+  }
+  25% { 
+    transform: translate(20px, -15px) scale(1.05);
+    opacity: 0.65;
+  }
+  50% { 
+    transform: translate(-10px, 10px) scale(0.98);
+    opacity: 0.5;
+  }
+  75% { 
+    transform: translate(15px, 5px) scale(1.03);
+    opacity: 0.6;
+  }
+}
+
+.health-orb {
+  position: absolute;
+  width: 500px;
+  height: 320px;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  animation: health-orb-drift 12s ease-in-out infinite;
+  will-change: transform, opacity;
+  z-index: 0;
+}
+
+/* Reduced motion: disable all non-essential animations */
+@media (prefers-reduced-motion: reduce) {
+  .health-orb,
+  .animate-float,
+  .animate-pulse-glow {
+    animation: none !important;
+  }
+  .premium-card:hover {
+    transform: none !important;
+  }
+}
+
 .animate-float {
   animation: float 6s ease-in-out infinite;
 }
@@ -157,10 +200,8 @@
 }
 
 .cyber-grid {
-  background-size: 40px 40px;
-  background-image: 
-    linear-gradient(to right, rgba(99, 102, 241, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-image: radial-gradient(circle, rgba(79, 110, 247, 0.04) 1px, transparent 1px);
 }
 
 @utility glass {
@@ -184,21 +225,19 @@
 }
 
 .premium-card {
-  @apply bg-card/90 dark:bg-card/45 border border-border/85 backdrop-blur-xl relative overflow-hidden transition-all duration-500;
-  border-radius: 24px;
+  @apply bg-card/90 dark:bg-card/50 border border-border/80 backdrop-blur-xl relative overflow-hidden transition-all duration-500;
+  border-radius: 20px;
   box-shadow: 
-    0 10px 25px -5px rgba(15, 23, 42, 0.05), 
-    0 8px 10px -6px rgba(15, 23, 42, 0.05),
-    0 1px 3px rgba(15, 23, 42, 0.02);
+    0 8px 20px -4px rgba(15, 23, 42, 0.04), 
+    0 4px 8px -4px rgba(15, 23, 42, 0.03);
 }
 
 .premium-card:hover {
-  @apply border-primary/30 bg-card dark:bg-card/65;
+  @apply border-primary/25 bg-card dark:bg-card/60;
   box-shadow: 
-    0 20px 40px -15px rgba(99, 102, 241, 0.12), 
-    0 0 25px -5px rgba(99, 102, 241, 0.06),
-    0 1px 5px rgba(0, 0, 0, 0.03);
-  transform: translateY(-4px);
+    0 12px 28px -8px rgba(79, 110, 247, 0.10), 
+    0 0 20px -4px rgba(79, 110, 247, 0.04);
+  transform: translateY(-2px);
 }
 
 .premium-card::before {
@@ -208,8 +247,22 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.04) 0%, transparent 50%);
   pointer-events: none;
+}
+
+.enterprise-card {
+  @apply bg-card border border-border relative overflow-hidden transition-all duration-300;
+  border-radius: 16px;
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.04),
+    0 4px 12px -2px rgba(0, 0, 0, 0.06);
+}
+
+.enterprise-card:hover {
+  box-shadow: 
+    0 2px 6px rgba(0, 0, 0, 0.06),
+    0 8px 24px -4px rgba(0, 0, 0, 0.08);
 }
 
 .premium-input {

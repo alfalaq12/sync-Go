@@ -145,6 +145,38 @@ export default function NetworkEditPage() {
     }
   }, [netData, isClone]);
 
+  useEffect(() => {
+    let source_resource_type = form.source_resource_type;
+    if (DB_DRIVERS.includes(form.source_driver)) {
+      source_resource_type = "service_path";
+    } else if (form.source_driver === "csv") {
+      source_resource_type = "local_path";
+    } else if (["ftp", "sftp"].includes(form.source_driver)) {
+      source_resource_type = "ftp_path";
+    } else if (form.source_driver === "api") {
+      source_resource_type = "api_url";
+    }
+
+    let target_resource_type = form.target_resource_type;
+    if (DB_DRIVERS.includes(form.target_driver)) {
+      target_resource_type = "service_path";
+    } else if (form.target_driver === "csv") {
+      target_resource_type = "local_path";
+    } else if (["ftp", "sftp"].includes(form.target_driver)) {
+      target_resource_type = "ftp_path";
+    } else if (form.target_driver === "api") {
+      target_resource_type = "api_url";
+    }
+
+    if (source_resource_type !== form.source_resource_type || target_resource_type !== form.target_resource_type) {
+      setForm(prev => ({
+        ...prev,
+        source_resource_type,
+        target_resource_type
+      }));
+    }
+  }, [form.source_driver, form.target_driver, form.source_resource_type, form.target_resource_type]);
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       const payload = {
@@ -182,7 +214,12 @@ export default function NetworkEditPage() {
         target_credential_id: toNum(form.target_credential_id),
       };
       const res = await testNetworkAdhoc(payload);
-      MySwal.fire({ title: 'Source Uplink', text: res.message, icon: res.success ? 'success' : 'error', ...swalTheme });
+      MySwal.fire({ 
+        title: 'Source Connection', 
+        text: res.success ? 'Source connection successful' : res.message, 
+        icon: res.success ? 'success' : 'error', 
+        ...swalTheme 
+      });
     } catch (err: any) { 
       const errorMsg = err?.response?.data?.error || err?.response?.data?.message || 'Could not reach source node.';
       MySwal.fire({ title: 'Link Failure', text: errorMsg, icon: 'error', ...swalTheme }); 
@@ -205,7 +242,12 @@ export default function NetworkEditPage() {
         target_credential_id: toNum(form.target_credential_id),
       };
       const res = await testNetworkAdhoc(payload);
-      MySwal.fire({ title: 'Target Uplink', text: res.message, icon: res.success ? 'success' : 'error', ...swalTheme });
+      MySwal.fire({ 
+        title: 'Target Connection', 
+        text: res.success ? 'Target connection successful' : res.message, 
+        icon: res.success ? 'success' : 'error', 
+        ...swalTheme 
+      });
     } catch (err: any) { 
       const errorMsg = err?.response?.data?.error || err?.response?.data?.message || 'Could not reach target destination.';
       MySwal.fire({ title: 'Link Failure', text: errorMsg, icon: 'error', ...swalTheme }); 
@@ -347,65 +389,101 @@ export default function NetworkEditPage() {
                 <SelectField label="Node" disabled={isViewOnly} value={form.source_node_id} onChange={(e: any) => setForm({...form, source_node_id: e.target.value})} options={[{value: "", label: "Select Node..."}, ...nodes.map((n: any) => ({value: n.id, label: `${n.node_code} (${n.node_name || n.hostname})`}))]} />
                 <SelectField label="Driver" disabled={isViewOnly} value={form.source_driver} onChange={(e: any) => setForm({...form, source_driver: e.target.value})} options={DRIVER_OPTIONS} />
               </div>
-              <SelectField label="Connectivity Type" disabled={isViewOnly} value={form.source_resource_type} onChange={(e: any) => setForm({...form, source_resource_type: e.target.value})} options={RESOURCE_TYPES} />
-              
-              {DB_DRIVERS.includes(form.source_driver) ? (
-                <>
-                  <div className="grid sm:grid-cols-3 gap-6">
-                    <div className="sm:col-span-2"><InputField label="Cloud/Local Host" disabled={isViewOnly} value={form.source_host} onChange={(e: any) => setForm({...form, source_host: e.target.value})} mono icon={Server} placeholder="db.origin.com" /></div>
-                    <InputField label="Port" disabled={isViewOnly} value={form.source_port} onChange={(e: any) => setForm({...form, source_port: e.target.value})} mono placeholder={form.source_driver === 'postgresql' ? "5432" : "3306"} />
-                  </div>
 
-                  <InputField 
-                    label={form.source_driver === 'oracle' ? "SID / Service Name" : "Source Database Name"} 
-                    disabled={isViewOnly} 
-                    value={form.source_database} 
-                    onChange={(e: any) => setForm({...form, source_database: e.target.value})} 
-                    mono 
-                    placeholder={form.source_driver === 'oracle' ? "ORCL" : "production_db"} 
-                  />
-                  
-                  <div className="grid sm:grid-cols-2 gap-6">
-                    <InputField label="User" disabled={isViewOnly} value={form.source_username} onChange={(e: any) => setForm({...form, source_username: e.target.value})} placeholder="usr_sync" />
-                    <div className={`space-y-2 ${isViewOnly ? 'opacity-70 pointer-events-none' : ''}`}>
-                       <div className="flex items-center justify-between px-1">
-                          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                            <KeyRound className="w-3.5 h-3.5" />
-                            Auth Vault
-                          </label>
-                          <span className="text-[9px] font-bold text-primary uppercase cursor-help hover:underline" title="Select a shared credential from your Vault to override manual password.">Use shared?</span>
-                       </div>
-                       <select 
-                          value={form.source_credential_id || ""} 
-                          disabled={isViewOnly}
-                          onChange={(e) => setForm({...form, source_credential_id: e.target.value ? parseInt(e.target.value) : null})}
-                          className={`w-full h-11 px-4 rounded-lg border border-border bg-card text-[12px] font-bold text-primary focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all appearance-none cursor-pointer ${isViewOnly ? 'cursor-not-allowed bg-muted/30' : ''}`}
-                       >
-                          <option value="">— Use Manual Password Below —</option>
-                          {(credsData?.data || []).map((c: any) => (
-                            <option key={c.id} value={c.id}>{c.name} ({c.username})</option>
-                          ))}
-                       </select>
-                    </div>
+              {!form.source_driver && (
+                <SelectField label="Connectivity Type" disabled={isViewOnly} value={form.source_resource_type} onChange={(e: any) => setForm({...form, source_resource_type: e.target.value})} options={RESOURCE_TYPES} />
+              )}
+              
+              {/* Host & Port for DB, FTP, SFTP, and API */}
+              {(DB_DRIVERS.includes(form.source_driver) || ["ftp", "sftp", "api"].includes(form.source_driver)) && (
+                <div className="grid sm:grid-cols-3 gap-6 animate-in fade-in duration-300">
+                  <div className="sm:col-span-2">
+                    <InputField 
+                      label={form.source_driver === 'api' ? "API Base URL / Endpoint" : "Cloud/Local Host"} 
+                      disabled={isViewOnly} 
+                      value={form.source_host} 
+                      onChange={(e: any) => setForm({...form, source_host: e.target.value})} 
+                      mono 
+                      icon={Server} 
+                      placeholder={form.source_driver === 'api' ? "https://api.example.com" : "db.origin.com"} 
+                    />
                   </div>
-                  
+                  {form.source_driver !== 'api' && (
+                    <InputField 
+                      label="Port" 
+                      disabled={isViewOnly} 
+                      value={form.source_port} 
+                      onChange={(e: any) => setForm({...form, source_port: e.target.value})} 
+                      mono 
+                      placeholder={form.source_driver === 'postgresql' ? "5432" : form.source_driver === 'sftp' ? "22" : form.source_driver === 'ftp' ? "21" : "3306"} 
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Database Name - Only for Databases */}
+              {DB_DRIVERS.includes(form.source_driver) && (
+                <InputField 
+                  label={form.source_driver === 'oracle' ? "SID / Service Name" : "Source Database Name"} 
+                  disabled={isViewOnly} 
+                  value={form.source_database} 
+                  onChange={(e: any) => setForm({...form, source_database: e.target.value})} 
+                  mono 
+                  placeholder={form.source_driver === 'oracle' ? "ORCL" : "production_db"} 
+                  className="animate-in fade-in duration-300"
+                />
+              )}
+              
+              {/* Credentials Section - DB, FTP, SFTP, API */}
+              {(DB_DRIVERS.includes(form.source_driver) || ["ftp", "sftp", "api"].includes(form.source_driver)) && (
+                <div className="grid sm:grid-cols-2 gap-6 animate-in fade-in duration-300">
+                  <InputField label="User / Identity" disabled={isViewOnly} value={form.source_username} onChange={(e: any) => setForm({...form, source_username: e.target.value})} placeholder={form.source_driver === 'api' ? "API_KEY" : "usr_sync"} />
+                  <div className={`space-y-2 ${isViewOnly ? 'opacity-70 pointer-events-none' : ''}`}>
+                     <div className="flex items-center justify-between px-1">
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                          <KeyRound className="w-3.5 h-3.5" />
+                          Auth Vault
+                        </label>
+                        <span className="text-[9px] font-bold text-primary uppercase cursor-help hover:underline" title="Select a shared credential from your Vault to override manual password.">Use shared?</span>
+                     </div>
+                     <select 
+                        value={form.source_credential_id || ""} 
+                        disabled={isViewOnly}
+                        onChange={(e) => setForm({...form, source_credential_id: e.target.value ? parseInt(e.target.value) : null})}
+                        className={`w-full h-11 px-4 rounded-lg border border-border bg-card text-[12px] font-bold text-primary focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all appearance-none cursor-pointer ${isViewOnly ? 'cursor-not-allowed bg-muted/30' : ''}`}
+                     >
+                        <option value="">— Use Manual Password Below —</option>
+                        {(credsData?.data || []).map((c: any) => (
+                          <option key={c.id} value={c.id}>{c.name} ({c.username})</option>
+                        ))}
+                     </select>
+                  </div>
+                </div>
+              )}
+              
+              {/* Manual Password - DB, FTP, SFTP, API */}
+              {(DB_DRIVERS.includes(form.source_driver) || ["ftp", "sftp", "api"].includes(form.source_driver)) && (
+                <div className="animate-in fade-in duration-300">
                   {!form.source_credential_id ? (
-                    <InputField label="Key Secret (Manual)" type="password" value={form.source_password} onChange={(e: any) => setForm({...form, source_password: e.target.value})} icon={Lock} placeholder="••••••••" />
+                    <InputField label="Key Secret (Manual)" type="password" disabled={isViewOnly} value={form.source_password} onChange={(e: any) => setForm({...form, source_password: e.target.value})} icon={Lock} placeholder="••••••••" />
                   ) : (
                     <div className="p-3 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-between">
                        <span className="text-[11px] font-bold text-primary uppercase tracking-wider">Linked to Vault Identity</span>
                        <Shield className="w-4 h-4 text-primary" />
                     </div>
                   )}
-                </>
-              ) : (
+                </div>
+              )}
+
+              {/* Flat File Specific Config */}
+              {form.source_driver === "csv" && (
                 <div className="space-y-6 p-6 rounded-xl bg-muted/30 border border-border border-dashed animate-in fade-in duration-300">
                   <div className="flex items-center gap-3 mb-2">
                     <Info className="w-4 h-4 text-muted-foreground" />
                     <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Flat File Configuration</span>
                   </div>
                   <div className="grid sm:grid-cols-3 gap-6">
-                    <InputField label="CSV Separator" disabled={isViewOnly} value={form.source_csv_separator} onChange={(e: any) => setForm({...form, source_csv_separator: e.target.value})} mono placeholder="|" />
+                    <InputField label="CSV Separator" disabled={isViewOnly} value={form.source_csv_separator} onChange={(e: any) => setForm({...form, source_csv_separator: e.target.value})} mono placeholder="|"/>
                     <InputField label="File Extension" disabled={isViewOnly} value={form.source_csv_extension} onChange={(e: any) => setForm({...form, source_csv_extension: e.target.value})} mono placeholder=".TXT" />
                     <div className="flex items-center gap-4 pt-6">
                       <label className="relative inline-flex items-center cursor-pointer">
@@ -418,7 +496,18 @@ export default function NetworkEditPage() {
                 </div>
               )}
               
-              <InputField label="Resource Identifier Path" disabled={isViewOnly} value={form.source_path} onChange={(e: any) => setForm({...form, source_path: e.target.value})} mono placeholder="/mnt/data/source.csv" />
+              {/* Path/Resource identifier - Only for CSV, FTP, SFTP, and API (NOT for DB) */}
+              {(form.source_driver !== "" && !DB_DRIVERS.includes(form.source_driver)) && (
+                <InputField 
+                  label={form.source_driver === 'api' ? "API Route Path" : "Resource Identifier Path"} 
+                  disabled={isViewOnly} 
+                  value={form.source_path} 
+                  onChange={(e: any) => setForm({...form, source_path: e.target.value})} 
+                  mono 
+                  placeholder={form.source_driver === 'api' ? "/v1/metrics/throughput" : "/mnt/data/source.csv"} 
+                  className="animate-in fade-in duration-300"
+                />
+              )}
             </div>
             
             <div className="p-6 border-t border-border bg-muted/10 flex justify-center">
@@ -442,58 +531,94 @@ export default function NetworkEditPage() {
                 <SelectField label="Node" disabled={isViewOnly} value={form.target_node_id} onChange={(e: any) => setForm({...form, target_node_id: e.target.value})} options={[{value: "", label: "Select Node..."}, ...nodes.map((n: any) => ({value: n.id, label: `${n.node_code} (${n.node_name || n.hostname})`}))]} />
                 <SelectField label="Driver" disabled={isViewOnly} value={form.target_driver} onChange={(e: any) => setForm({...form, target_driver: e.target.value})} options={DRIVER_OPTIONS} />
               </div>
-              <SelectField label="Connectivity Type" disabled={isViewOnly} value={form.target_resource_type} onChange={(e: any) => setForm({...form, target_resource_type: e.target.value})} options={RESOURCE_TYPES} />
-              
-              {DB_DRIVERS.includes(form.target_driver) ? (
-                <>
-                  <div className="grid sm:grid-cols-3 gap-6">
-                    <div className="sm:col-span-2"><InputField label="Cloud/Local Host" disabled={isViewOnly} value={form.target_host} onChange={(e: any) => setForm({...form, target_host: e.target.value})} mono icon={Server} placeholder="rds.target.aws..." /></div>
-                    <InputField label="Port" disabled={isViewOnly} value={form.target_port} onChange={(e: any) => setForm({...form, target_port: e.target.value})} mono placeholder={form.target_driver === 'mysql' ? "3306" : "5432"} />
-                  </div>
 
-                  <InputField 
-                    label={form.target_driver === 'oracle' ? "SID / Service Name" : "Target Database Name"} 
-                    disabled={isViewOnly} 
-                    value={form.target_database} 
-                    onChange={(e: any) => setForm({...form, target_database: e.target.value})} 
-                    mono 
-                    placeholder={form.target_driver === 'oracle' ? "XE" : "warehouse_db"} 
-                  />
-                  
-                  <div className="grid sm:grid-cols-2 gap-6">
-                    <InputField label="User" disabled={isViewOnly} value={form.target_username} onChange={(e: any) => setForm({...form, target_username: e.target.value})} placeholder="usr_sink" />
-                    <div className={`space-y-2 ${isViewOnly ? 'opacity-70 pointer-events-none' : ''}`}>
-                       <div className="flex items-center justify-between px-1">
-                          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                            <KeyRound className="w-3.5 h-3.5" />
-                            Auth Vault
-                          </label>
-                          <span className="text-[9px] font-bold text-emerald-500 uppercase cursor-help hover:underline" title="Select a shared credential from your Vault to override manual password.">Use shared?</span>
-                       </div>
-                       <select 
-                          value={form.target_credential_id || ""} 
-                          disabled={isViewOnly}
-                          onChange={(e) => setForm({...form, target_credential_id: e.target.value ? parseInt(e.target.value) : null})}
-                          className={`w-full h-11 px-4 rounded-lg border border-border bg-card text-[12px] font-bold text-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 transition-all appearance-none cursor-pointer ${isViewOnly ? 'cursor-not-allowed bg-muted/30' : ''}`}
-                       >
-                          <option value="">— Use Manual Password Below —</option>
-                          {(credsData?.data || []).map((c: any) => (
-                            <option key={c.id} value={c.id}>{c.name} ({c.username})</option>
-                          ))}
-                       </select>
-                    </div>
+              {!form.target_driver && (
+                <SelectField label="Connectivity Type" disabled={isViewOnly} value={form.target_resource_type} onChange={(e: any) => setForm({...form, target_resource_type: e.target.value})} options={RESOURCE_TYPES} />
+              )}
+              
+              {/* Host & Port for DB, FTP, SFTP, and API */}
+              {(DB_DRIVERS.includes(form.target_driver) || ["ftp", "sftp", "api"].includes(form.target_driver)) && (
+                <div className="grid sm:grid-cols-3 gap-6 animate-in fade-in duration-300">
+                  <div className="sm:col-span-2">
+                    <InputField 
+                      label={form.target_driver === 'api' ? "API Base URL / Endpoint" : "Cloud/Local Host"} 
+                      disabled={isViewOnly} 
+                      value={form.target_host} 
+                      onChange={(e: any) => setForm({...form, target_host: e.target.value})} 
+                      mono 
+                      icon={Server} 
+                      placeholder={form.target_driver === 'api' ? "https://api.target.com" : "rds.target.aws..."} 
+                    />
                   </div>
-                  
+                  {form.target_driver !== 'api' && (
+                    <InputField 
+                      label="Port" 
+                      disabled={isViewOnly} 
+                      value={form.target_port} 
+                      onChange={(e: any) => setForm({...form, target_port: e.target.value})} 
+                      mono 
+                      placeholder={form.target_driver === 'mysql' ? "3306" : form.target_driver === 'sftp' ? "22" : form.target_driver === 'ftp' ? "21" : "5432"} 
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Database Name - Only for Databases */}
+              {DB_DRIVERS.includes(form.target_driver) && (
+                <InputField 
+                  label={form.target_driver === 'oracle' ? "SID / Service Name" : "Target Database Name"} 
+                  disabled={isViewOnly} 
+                  value={form.target_database} 
+                  onChange={(e: any) => setForm({...form, target_database: e.target.value})} 
+                  mono 
+                  placeholder={form.target_driver === 'oracle' ? "XE" : "warehouse_db"} 
+                  className="animate-in fade-in duration-300"
+                />
+              )}
+              
+              {/* Credentials Section - DB, FTP, SFTP, API */}
+              {(DB_DRIVERS.includes(form.target_driver) || ["ftp", "sftp", "api"].includes(form.target_driver)) && (
+                <div className="grid sm:grid-cols-2 gap-6 animate-in fade-in duration-300">
+                  <InputField label="User / Identity" disabled={isViewOnly} value={form.target_username} onChange={(e: any) => setForm({...form, target_username: e.target.value})} placeholder={form.target_driver === 'api' ? "API_KEY" : "usr_sink"} />
+                  <div className={`space-y-2 ${isViewOnly ? 'opacity-70 pointer-events-none' : ''}`}>
+                     <div className="flex items-center justify-between px-1">
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                          <KeyRound className="w-3.5 h-3.5" />
+                          Auth Vault
+                        </label>
+                        <span className="text-[9px] font-bold text-emerald-500 uppercase cursor-help hover:underline" title="Select a shared credential from your Vault to override manual password.">Use shared?</span>
+                     </div>
+                     <select 
+                        value={form.target_credential_id || ""} 
+                        disabled={isViewOnly}
+                        onChange={(e) => setForm({...form, target_credential_id: e.target.value ? parseInt(e.target.value) : null})}
+                        className={`w-full h-11 px-4 rounded-lg border border-border bg-card text-[12px] font-bold text-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500 transition-all appearance-none cursor-pointer ${isViewOnly ? 'cursor-not-allowed bg-muted/30' : ''}`}
+                     >
+                        <option value="">— Use Manual Password Below —</option>
+                        {(credsData?.data || []).map((c: any) => (
+                          <option key={c.id} value={c.id}>{c.name} ({c.username})</option>
+                        ))}
+                     </select>
+                  </div>
+                </div>
+              )}
+              
+              {/* Manual Password - DB, FTP, SFTP, API */}
+              {(DB_DRIVERS.includes(form.target_driver) || ["ftp", "sftp", "api"].includes(form.target_driver)) && (
+                <div className="animate-in fade-in duration-300">
                   {!form.target_credential_id ? (
-                    <InputField label="Key Secret (Manual)" type="password" value={form.target_password} onChange={(e: any) => setForm({...form, target_password: e.target.value})} icon={Lock} placeholder="••••••••" />
+                    <InputField label="Key Secret (Manual)" type="password" disabled={isViewOnly} value={form.target_password} onChange={(e: any) => setForm({...form, target_password: e.target.value})} icon={Lock} placeholder="••••••••" />
                   ) : (
                     <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between">
                        <span className="text-[11px] font-bold text-emerald-500 uppercase tracking-wider">Linked to Vault Identity</span>
                        <Shield className="w-4 h-4 text-emerald-500" />
                     </div>
                   )}
-                </>
-              ) : (
+                </div>
+              )}
+
+              {/* Flat File Specific Config */}
+              {form.target_driver === "csv" && (
                 <div className="space-y-6 p-6 rounded-xl bg-muted/30 border border-border border-dashed animate-in fade-in duration-300">
                   <div className="flex items-center gap-3 mb-2">
                     <Info className="w-4 h-4 text-emerald-500" />
@@ -505,7 +630,18 @@ export default function NetworkEditPage() {
                 </div>
               )}
               
-              <InputField label="Resource Identifier Path" disabled={isViewOnly} value={form.target_path} onChange={(e: any) => setForm({...form, target_path: e.target.value})} mono placeholder="/var/www/target/" />
+              {/* Path/Resource identifier - Only for CSV, FTP, SFTP, and API (NOT for DB) */}
+              {(form.target_driver !== "" && !DB_DRIVERS.includes(form.target_driver)) && (
+                <InputField 
+                  label={form.target_driver === 'api' ? "API Route Path" : "Resource Identifier Path"} 
+                  disabled={isViewOnly} 
+                  value={form.target_path} 
+                  onChange={(e: any) => setForm({...form, target_path: e.target.value})} 
+                  mono 
+                  placeholder={form.target_driver === 'api' ? "/v1/metrics/throughput" : "/var/www/target/"} 
+                  className="animate-in fade-in duration-300"
+                />
+              )}
             </div>
             
             <div className="p-6 border-t border-border bg-muted/10 flex justify-center">
