@@ -498,7 +498,7 @@ func deserializeValue(s string) any {
 	}
 	if strings.HasPrefix(s, "__DSP_INT__:") {
 		i, _ := strconv.ParseInt(s[12:], 10, 64)
-		return int32(i) // Return int32 since pgx prefers int32 for INT4
+		return i // Return int64 to support both INT4 and INT8 (bigint) natively
 	}
 	if strings.HasPrefix(s, "__DSP_FLOAT__:") {
 		f, _ := strconv.ParseFloat(s[14:], 64)
