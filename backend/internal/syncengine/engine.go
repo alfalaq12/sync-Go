@@ -193,10 +193,14 @@ func (e *Engine) ExecuteSync(ctx context.Context, jobID int) error {
 	handshakeCtx, cancelHandshake := context.WithTimeout(ctx, time.Duration(timeoutSecs)*time.Second)
 	defer cancelHandshake()
 
-	e.LogToDB(ctx, jobID, sourceNodeID, "INFO", "Engine", "Verifying source network connection path...")
-	if err := sourceDriver.TestConnection(handshakeCtx, net); err != nil {
-		e.LogToDB(ctx, jobID, sourceNodeID, "ERROR", "Engine", fmt.Sprintf("Source connection handshake failed: %v", err))
-		return fmt.Errorf("source connection failure: %v", err)
+	if isSourceDistributed == nil || !*isSourceDistributed || e.agentManager == nil {
+		e.LogToDB(ctx, jobID, sourceNodeID, "INFO", "Engine", "Verifying source network connection path...")
+		if err := sourceDriver.TestConnection(handshakeCtx, net); err != nil {
+			e.LogToDB(ctx, jobID, sourceNodeID, "ERROR", "Engine", fmt.Sprintf("Source connection handshake failed: %v", err))
+			return fmt.Errorf("source connection failure: %v", err)
+		}
+	} else {
+		e.LogToDB(ctx, jobID, sourceNodeID, "INFO", "Engine", "Skipping local source handshake for distributed node")
 	}
 
 	e.LogToDB(ctx, jobID, targetNodeID, "INFO", "Engine", "Verifying target destination connection path...")
@@ -252,7 +256,11 @@ func (e *Engine) ExecuteSync(ctx context.Context, jobID int) error {
 
 		// A. Pre-queries
 		if epq != "" {
-			_ = sourceDriver.ExecuteQuery(ctx, net, epq)
+			if isSourceDistributed == nil || !*isSourceDistributed || e.agentManager == nil {
+				_ = sourceDriver.ExecuteQuery(ctx, net, epq)
+			} else {
+				e.LogToDB(ctx, jobID, sourceNodeID, "INFO", "ETL", "Skipping source pre-query (epq) for distributed node (not supported yet)")
+			}
 		}
 		if upq != "" {
 			_ = targetDriver.ExecuteQuery(ctx, target, upq)
