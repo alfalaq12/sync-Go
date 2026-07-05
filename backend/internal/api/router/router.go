@@ -13,7 +13,7 @@ import (
 	"github.com/bintang/remake-dsp-backend/internal/syncengine"
 )
 
-func SetupRouter(db *pgxpool.Pool, cfg *config.Config) *gin.Engine {
+func SetupRouter(db *pgxpool.Pool, cfg *config.Config, agentManager *syncengine.AgentManager) *gin.Engine {
 	r := gin.Default()
 
 	// CORS middleware — whitelist specific origins instead of wildcard
@@ -60,13 +60,14 @@ func SetupRouter(db *pgxpool.Pool, cfg *config.Config) *gin.Engine {
 
 	// Init engine
 	syncEngine := syncengine.NewEngine(db)
+	syncEngine.SetAgentManager(agentManager)
 
 	// Init handlers
 	authHandler := handlers.NewAuthHandler(db, cfg)
 	nodeHandler := handlers.NewNodeHandler(db)
 	jobHandler := handlers.NewJobHandler(db, syncEngine)
 	schemaHandler := handlers.NewSchemaHandler(db)
-	networkHandler := handlers.NewNetworkHandler(db)
+	networkHandler := handlers.NewNetworkHandler(db, agentManager)
 	logHandler := handlers.NewLogHandler(db)
 	credentialHandler := handlers.NewCredentialHandler(db)
 	userHandler := handlers.NewUserHandler(db)

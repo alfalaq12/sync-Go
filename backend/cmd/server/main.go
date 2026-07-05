@@ -33,13 +33,13 @@ func main() {
 		db.RunMigrations(ctx, pool)
 	}
 
-	r := router.SetupRouter(pool, cfg)
-
 	// Start Sync Engine & Scheduler
 	agentManager := syncengine.NewAgentManager()
 	engine := syncengine.NewEngine(pool)
 	engine.SetAgentManager(agentManager)
 	
+	r := router.SetupRouter(pool, cfg, agentManager)
+
 	scheduler := syncengine.NewScheduler(pool, engine)
 	go scheduler.Start(ctx)
 

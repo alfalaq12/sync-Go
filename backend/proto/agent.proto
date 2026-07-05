@@ -10,6 +10,8 @@ service SyncAgent {
 
   // Agent pushes data to Master during a sync job
   rpc PushData(stream DataBatch) returns (SyncResult);
+  // Agent reports the result of a network test back to Master
+  rpc ReportTestResult(ConnectionTestResult) returns (Empty);
 }
 
 message Heartbeat {
@@ -18,11 +20,19 @@ message Heartbeat {
   string status = 3; // e.g., "IDLE", "SYNCING"
 }
 
+message ConnectionTestResult {
+  string test_id = 1;
+  bool success = 2;
+  string error_message = 3;
+  string latency = 4;
+}
+
 message ControlMessage {
   enum Command {
     PING = 0;
     START_SYNC = 1;
     STOP_SYNC = 2;
+    TEST_CONNECTION = 3;
   }
   Command cmd = 1;
   string payload = 2; // JSON containing Job Details

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -125,4 +126,11 @@ func (s *AgentGRPCServer) PushData(stream proto.SyncAgent_PushDataServer) error 
 
 		ch <- batch
 	}
+}
+
+func (s *AgentGRPCServer) ReportTestResult(ctx context.Context, result *proto.ConnectionTestResult) (*proto.Empty, error) {
+	if s.Manager != nil {
+		s.Manager.ResolveTestResult(result.TestId, result)
+	}
+	return &proto.Empty{}, nil
 }

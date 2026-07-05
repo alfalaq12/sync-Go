@@ -20,12 +20,14 @@ type AgentManager struct {
 	mu     sync.RWMutex
 	agents map[string]*RemoteAgent // key: NodeCode
 	jobs   map[string]chan *proto.DataBatch // key: JobId
+	tests  map[string]chan *proto.ConnectionTestResult // key: TestId
 }
 
 func NewAgentManager() *AgentManager {
 	return &AgentManager{
 		agents: make(map[string]*RemoteAgent),
 		jobs:   make(map[string]chan *proto.DataBatch),
+		tests:  make(map[string]chan *proto.ConnectionTestResult),
 	}
 }
 
@@ -82,4 +84,42 @@ func (m *AgentManager) CleanupJob(jobID string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	delete(m.jobs, jobID)
+}
+
+func (m *AgentManager) DispatchTestConnection(ctx context.Context, nodeCode string, testID string, payload string, respCh chan *proto.ConnectionTestResult) error {
+	agent, ok := m.GetAgent(nodeCode)
+	if !ok {
+		return fmt.Errorf("agent %s not connected", nodeCode)
+	}
+
+	m.mu.Lock()
+	m.tests[testID] = respCh
+	m.mu.Unlock()
+
+	err := agent.Control.Send(&proto.ControlMessage{
+		Cmd:     proto.ControlMessage_TEST_CONNECTION,
+		Payload: payload,
+		JobId:   testID,
+	})
+	if err != nil {
+		m.Unregister(nodeCode)
+		m.mu.Lock()
+		delete(m.tests, testID)
+		m.mu.Unlock()
+		return fmt.Errorf("failed to send command to agent: %v", err)
+	}
+	return nil
+}
+
+func (m *AgentManager) ResolveTestResult(testID string, result *proto.ConnectionTestResult) {
+	m.mu.Lock()
+	ch, ok := m.tests[testID]
+	if ok {
+		delete(m.tests, testID)
+	}
+	m.mu.Unlock()
+
+	if ok {
+		ch <- result
+	}
 }

@@ -22,6 +22,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: syncgo-backend
+    ports:
+      - "50051:9090"
     environment:
       - PORT=8080
       - GRPC_PORT=9090

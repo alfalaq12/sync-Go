@@ -1,23 +1,27 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"time"
 
+	"github.com/bintang/remake-dsp-backend/internal/agent/proto"
 	"github.com/bintang/remake-dsp-backend/internal/drivers"
+	"github.com/bintang/remake-dsp-backend/internal/syncengine"
 	"github.com/bintang/remake-dsp-backend/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type NetworkHandler struct {
-	db *pgxpool.Pool
+	db           *pgxpool.Pool
+	agentManager *syncengine.AgentManager
 }
 
-func NewNetworkHandler(db *pgxpool.Pool) *NetworkHandler {
-	return &NetworkHandler{db: db}
+func NewNetworkHandler(db *pgxpool.Pool, agentManager *syncengine.AgentManager) *NetworkHandler {
+	return &NetworkHandler{db: db, agentManager: agentManager}
 }
 
 type NetworkResponse struct {
@@ -496,6 +500,46 @@ func (h *NetworkHandler) TestConnectionAdhoc(c *gin.Context) {
 		}
 	}
 
+	var isDistributed bool
+	var nodeCode string
+	var nodeID *int
+
+	if side == "source" {
+		nodeID = req.SourceNodeID
+	} else {
+		nodeID = req.TargetNodeID
+	}
+
+	if nodeID != nil {
+		_ = h.db.QueryRow(c.Request.Context(), "SELECT is_distributed, node_code FROM M_NODE WHERE m_node_id = $1", *nodeID).Scan(&isDistributed, &nodeCode)
+	}
+
+	if isDistributed && h.agentManager != nil {
+		testID := fmt.Sprintf("test-%d", time.Now().UnixNano())
+		respCh := make(chan *proto.ConnectionTestResult, 1)
+		
+		payloadBytes, _ := json.Marshal(d)
+		
+		err := h.agentManager.DispatchTestConnection(c.Request.Context(), nodeCode, testID, string(payloadBytes), respCh)
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{"success": false, "message": fmt.Sprintf("Failed to dispatch test to agent %s: %v", nodeCode, err)})
+			return
+		}
+
+		select {
+		case res := <-respCh:
+			if res.Success {
+				c.JSON(http.StatusOK, gin.H{"success": true, "message": fmt.Sprintf("Agent %s verified connection successfully", nodeCode), "latency": res.Latency})
+			} else {
+				c.JSON(http.StatusOK, gin.H{"success": false, "message": fmt.Sprintf("Agent %s verification failed: %s", nodeCode, res.ErrorMessage), "latency": res.Latency})
+			}
+		case <-time.After(15 * time.Second):
+			c.JSON(http.StatusOK, gin.H{"success": false, "message": fmt.Sprintf("Timeout waiting for agent %s to respond", nodeCode)})
+		}
+		return
+	}
+
+	// Local Testing (for Master Node)
 	driver, err := drivers.GetDriver(d.Driver)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": err.Error()})
@@ -509,7 +553,7 @@ func (h *NetworkHandler) TestConnectionAdhoc(c *gin.Context) {
 	if testErr != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"message": fmt.Sprintf("Adhoc Verification Failed: %v", testErr),
+			"message": fmt.Sprintf("Master Adhoc Verification Failed: %v", testErr),
 			"latency": fmt.Sprintf("%v", latency.Truncate(time.Millisecond)),
 		})
 		return
@@ -517,7 +561,7 @@ func (h *NetworkHandler) TestConnectionAdhoc(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"message": "Adhoc verification successful",
+		"message": "Master Adhoc verification successful",
 		"latency": fmt.Sprintf("%v", latency.Truncate(time.Millisecond)),
 	})
 }

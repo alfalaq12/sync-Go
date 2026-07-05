@@ -17,6 +17,7 @@ import (
 	"github.com/bintang/remake-dsp-backend/internal/drivers"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type AgentConfig struct {
@@ -92,8 +93,7 @@ func main() {
 		log.Println("gRPC Agent TLS enabled (mTLS)")
 	} else {
 		log.Printf("WARNING: Connecting in INSECURE mode")
-		dialOpts = append(dialOpts, grpc.WithDefaultCallOptions()) // Placeholder
-		// Note: grpc.WithInsecure is deprecated, using insecure credentials instead if needed
+		dialOpts = append(dialOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
 	conn, err := grpc.Dial(cfg.MasterAddr, dialOpts...)
@@ -166,17 +166,65 @@ func runSession(client proto.SyncAgentClient, token, nodeCode string) error {
 
 		switch msg.Cmd {
 		case proto.ControlMessage_START_SYNC:
-			log.Printf("Received START_SYNC for Job %s (Query: %s)", msg.JobId, "...")
+			log.Printf("Received START_SYNC for Job %s", msg.JobId)
 			go handleSyncJob(client, msg)
+		case proto.ControlMessage_TEST_CONNECTION:
+			log.Printf("Received TEST_CONNECTION for Job %s", msg.JobId)
+			go handleTestConnection(client, msg)
 		case proto.ControlMessage_PING:
 			log.Printf("Heartbeat check from Master")
 		}
 	}
 }
 
+func handleTestConnection(client proto.SyncAgentClient, msg *proto.ControlMessage) {
+	var drvConfig drivers.ConnectionConfig
+	if err := json.Unmarshal([]byte(msg.Payload), &drvConfig); err != nil {
+		log.Printf("[Job %s] Failed to parse connection payload: %v", msg.JobId, err)
+		client.ReportTestResult(context.Background(), &proto.ConnectionTestResult{
+			TestId:       msg.JobId,
+			Success:      false,
+			ErrorMessage: fmt.Sprintf("invalid payload: %v", err),
+		})
+		return
+	}
+
+	drv, err := drivers.GetDriver(drvConfig.Driver)
+	if err != nil {
+		client.ReportTestResult(context.Background(), &proto.ConnectionTestResult{
+			TestId:       msg.JobId,
+			Success:      false,
+			ErrorMessage: fmt.Sprintf("driver error: %v", err),
+		})
+		return
+	}
+
+	start := time.Now()
+	testErr := drv.TestConnection(context.Background(), drvConfig)
+	latency := time.Since(start)
+
+	res := &proto.ConnectionTestResult{
+		TestId:  msg.JobId,
+		Latency: latency.Truncate(time.Millisecond).String(),
+	}
+
+	if testErr != nil {
+		res.Success = false
+		res.ErrorMessage = testErr.Error()
+	} else {
+		res.Success = true
+	}
+
+	_, err = client.ReportTestResult(context.Background(), res)
+	if err != nil {
+		log.Printf("[Job %s] Failed to report test result back to master: %v", msg.JobId, err)
+	}
+}
+
 type JobPayload struct {
-	Query     string `json:"query"`
-	BatchSize int    `json:"batch_size"`
+	Query     string                   `json:"query"`
+	BatchSize int                      `json:"batch_size"`
+	Config    drivers.ConnectionConfig `json:"config"`
 }
 
 func handleSyncJob(client proto.SyncAgentClient, msg *proto.ControlMessage) {
@@ -188,8 +236,7 @@ func handleSyncJob(client proto.SyncAgentClient, msg *proto.ControlMessage) {
 
 	log.Printf("[Job %s] Starting extraction...", msg.JobId)
 	
-	// Initialize local driver
-	drv, err := drivers.GetDriver(cfg.LocalDriver)
+	drv, err := drivers.GetDriver(payload.Config.Driver)
 	if err != nil {
 		log.Printf("[Job %s] Driver error: %v", msg.JobId, err)
 		return
@@ -201,12 +248,8 @@ func handleSyncJob(client proto.SyncAgentClient, msg *proto.ControlMessage) {
 		return
 	}
 
-	drvConfig := drivers.ConnectionConfig{
-		Database: cfg.LocalDBURL, // Driver interprets this as DSN or URL
-	}
-
 	// Extract in chunks and push
-	err = drv.StreamExtract(context.Background(), drvConfig, payload.Query, payload.BatchSize, func(columns []string, chunk [][]any) error {
+	err = drv.StreamExtract(context.Background(), payload.Config, payload.Query, payload.BatchSize, func(columns []string, chunk [][]any) error {
 		log.Printf("[Job %s] Pushing batch of %d rows...", msg.JobId, len(chunk))
 		
 		protoRows := make([]*proto.Row, len(chunk))

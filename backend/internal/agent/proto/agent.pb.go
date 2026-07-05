@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v4.25.9
-// source: agent.proto
+// source: proto/agent.proto
 
 package proto
 
@@ -24,9 +24,10 @@ const (
 type ControlMessage_Command int32
 
 const (
-	ControlMessage_PING       ControlMessage_Command = 0
-	ControlMessage_START_SYNC ControlMessage_Command = 1
-	ControlMessage_STOP_SYNC  ControlMessage_Command = 2
+	ControlMessage_PING            ControlMessage_Command = 0
+	ControlMessage_START_SYNC      ControlMessage_Command = 1
+	ControlMessage_STOP_SYNC       ControlMessage_Command = 2
+	ControlMessage_TEST_CONNECTION ControlMessage_Command = 3
 )
 
 // Enum value maps for ControlMessage_Command.
@@ -35,11 +36,13 @@ var (
 		0: "PING",
 		1: "START_SYNC",
 		2: "STOP_SYNC",
+		3: "TEST_CONNECTION",
 	}
 	ControlMessage_Command_value = map[string]int32{
-		"PING":       0,
-		"START_SYNC": 1,
-		"STOP_SYNC":  2,
+		"PING":            0,
+		"START_SYNC":      1,
+		"STOP_SYNC":       2,
+		"TEST_CONNECTION": 3,
 	}
 )
 
@@ -54,11 +57,11 @@ func (x ControlMessage_Command) String() string {
 }
 
 func (ControlMessage_Command) Descriptor() protoreflect.EnumDescriptor {
-	return file_agent_proto_enumTypes[0].Descriptor()
+	return file_proto_agent_proto_enumTypes[0].Descriptor()
 }
 
 func (ControlMessage_Command) Type() protoreflect.EnumType {
-	return &file_agent_proto_enumTypes[0]
+	return &file_proto_agent_proto_enumTypes[0]
 }
 
 func (x ControlMessage_Command) Number() protoreflect.EnumNumber {
@@ -67,7 +70,7 @@ func (x ControlMessage_Command) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ControlMessage_Command.Descriptor instead.
 func (ControlMessage_Command) EnumDescriptor() ([]byte, []int) {
-	return file_agent_proto_rawDescGZIP(), []int{1, 0}
+	return file_proto_agent_proto_rawDescGZIP(), []int{2, 0}
 }
 
 type Heartbeat struct {
@@ -81,7 +84,7 @@ type Heartbeat struct {
 
 func (x *Heartbeat) Reset() {
 	*x = Heartbeat{}
-	mi := &file_agent_proto_msgTypes[0]
+	mi := &file_proto_agent_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -93,7 +96,7 @@ func (x *Heartbeat) String() string {
 func (*Heartbeat) ProtoMessage() {}
 
 func (x *Heartbeat) ProtoReflect() protoreflect.Message {
-	mi := &file_agent_proto_msgTypes[0]
+	mi := &file_proto_agent_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -106,7 +109,7 @@ func (x *Heartbeat) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Heartbeat.ProtoReflect.Descriptor instead.
 func (*Heartbeat) Descriptor() ([]byte, []int) {
-	return file_agent_proto_rawDescGZIP(), []int{0}
+	return file_proto_agent_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Heartbeat) GetAgentToken() string {
@@ -130,6 +133,74 @@ func (x *Heartbeat) GetStatus() string {
 	return ""
 }
 
+type ConnectionTestResult struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TestId        string                 `protobuf:"bytes,1,opt,name=test_id,json=testId,proto3" json:"test_id,omitempty"`
+	Success       bool                   `protobuf:"varint,2,opt,name=success,proto3" json:"success,omitempty"`
+	ErrorMessage  string                 `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	Latency       string                 `protobuf:"bytes,4,opt,name=latency,proto3" json:"latency,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConnectionTestResult) Reset() {
+	*x = ConnectionTestResult{}
+	mi := &file_proto_agent_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConnectionTestResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConnectionTestResult) ProtoMessage() {}
+
+func (x *ConnectionTestResult) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_agent_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConnectionTestResult.ProtoReflect.Descriptor instead.
+func (*ConnectionTestResult) Descriptor() ([]byte, []int) {
+	return file_proto_agent_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ConnectionTestResult) GetTestId() string {
+	if x != nil {
+		return x.TestId
+	}
+	return ""
+}
+
+func (x *ConnectionTestResult) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *ConnectionTestResult) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+func (x *ConnectionTestResult) GetLatency() string {
+	if x != nil {
+		return x.Latency
+	}
+	return ""
+}
+
 type ControlMessage struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Cmd           ControlMessage_Command `protobuf:"varint,1,opt,name=cmd,proto3,enum=agent.ControlMessage_Command" json:"cmd,omitempty"`
@@ -141,7 +212,7 @@ type ControlMessage struct {
 
 func (x *ControlMessage) Reset() {
 	*x = ControlMessage{}
-	mi := &file_agent_proto_msgTypes[1]
+	mi := &file_proto_agent_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -153,7 +224,7 @@ func (x *ControlMessage) String() string {
 func (*ControlMessage) ProtoMessage() {}
 
 func (x *ControlMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_agent_proto_msgTypes[1]
+	mi := &file_proto_agent_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -166,7 +237,7 @@ func (x *ControlMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ControlMessage.ProtoReflect.Descriptor instead.
 func (*ControlMessage) Descriptor() ([]byte, []int) {
-	return file_agent_proto_rawDescGZIP(), []int{1}
+	return file_proto_agent_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ControlMessage) GetCmd() ControlMessage_Command {
@@ -202,7 +273,7 @@ type DataBatch struct {
 
 func (x *DataBatch) Reset() {
 	*x = DataBatch{}
-	mi := &file_agent_proto_msgTypes[2]
+	mi := &file_proto_agent_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -214,7 +285,7 @@ func (x *DataBatch) String() string {
 func (*DataBatch) ProtoMessage() {}
 
 func (x *DataBatch) ProtoReflect() protoreflect.Message {
-	mi := &file_agent_proto_msgTypes[2]
+	mi := &file_proto_agent_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -227,7 +298,7 @@ func (x *DataBatch) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DataBatch.ProtoReflect.Descriptor instead.
 func (*DataBatch) Descriptor() ([]byte, []int) {
-	return file_agent_proto_rawDescGZIP(), []int{2}
+	return file_proto_agent_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *DataBatch) GetJobId() string {
@@ -267,7 +338,7 @@ type Row struct {
 
 func (x *Row) Reset() {
 	*x = Row{}
-	mi := &file_agent_proto_msgTypes[3]
+	mi := &file_proto_agent_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -279,7 +350,7 @@ func (x *Row) String() string {
 func (*Row) ProtoMessage() {}
 
 func (x *Row) ProtoReflect() protoreflect.Message {
-	mi := &file_agent_proto_msgTypes[3]
+	mi := &file_proto_agent_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -292,7 +363,7 @@ func (x *Row) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Row.ProtoReflect.Descriptor instead.
 func (*Row) Descriptor() ([]byte, []int) {
-	return file_agent_proto_rawDescGZIP(), []int{3}
+	return file_proto_agent_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Row) GetValues() []string {
@@ -314,7 +385,7 @@ type SyncResult struct {
 
 func (x *SyncResult) Reset() {
 	*x = SyncResult{}
-	mi := &file_agent_proto_msgTypes[4]
+	mi := &file_proto_agent_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -326,7 +397,7 @@ func (x *SyncResult) String() string {
 func (*SyncResult) ProtoMessage() {}
 
 func (x *SyncResult) ProtoReflect() protoreflect.Message {
-	mi := &file_agent_proto_msgTypes[4]
+	mi := &file_proto_agent_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -339,7 +410,7 @@ func (x *SyncResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SyncResult.ProtoReflect.Descriptor instead.
 func (*SyncResult) Descriptor() ([]byte, []int) {
-	return file_agent_proto_rawDescGZIP(), []int{4}
+	return file_proto_agent_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *SyncResult) GetJobId() string {
@@ -378,7 +449,7 @@ type Empty struct {
 
 func (x *Empty) Reset() {
 	*x = Empty{}
-	mi := &file_agent_proto_msgTypes[5]
+	mi := &file_proto_agent_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -390,7 +461,7 @@ func (x *Empty) String() string {
 func (*Empty) ProtoMessage() {}
 
 func (x *Empty) ProtoReflect() protoreflect.Message {
-	mi := &file_agent_proto_msgTypes[5]
+	mi := &file_proto_agent_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -403,28 +474,34 @@ func (x *Empty) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Empty.ProtoReflect.Descriptor instead.
 func (*Empty) Descriptor() ([]byte, []int) {
-	return file_agent_proto_rawDescGZIP(), []int{5}
+	return file_proto_agent_proto_rawDescGZIP(), []int{6}
 }
 
-var File_agent_proto protoreflect.FileDescriptor
+var File_proto_agent_proto protoreflect.FileDescriptor
 
-const file_agent_proto_rawDesc = "" +
+const file_proto_agent_proto_rawDesc = "" +
 	"\n" +
-	"\vagent.proto\x12\x05agent\"a\n" +
+	"\x11proto/agent.proto\x12\x05agent\"a\n" +
 	"\tHeartbeat\x12\x1f\n" +
 	"\vagent_token\x18\x01 \x01(\tR\n" +
 	"agentToken\x12\x1b\n" +
 	"\tnode_code\x18\x02 \x01(\tR\bnodeCode\x12\x16\n" +
-	"\x06status\x18\x03 \x01(\tR\x06status\"\xa6\x01\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\"\x88\x01\n" +
+	"\x14ConnectionTestResult\x12\x17\n" +
+	"\atest_id\x18\x01 \x01(\tR\x06testId\x12\x18\n" +
+	"\asuccess\x18\x02 \x01(\bR\asuccess\x12#\n" +
+	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\x12\x18\n" +
+	"\alatency\x18\x04 \x01(\tR\alatency\"\xbb\x01\n" +
 	"\x0eControlMessage\x12/\n" +
 	"\x03cmd\x18\x01 \x01(\x0e2\x1d.agent.ControlMessage.CommandR\x03cmd\x12\x18\n" +
 	"\apayload\x18\x02 \x01(\tR\apayload\x12\x15\n" +
-	"\x06job_id\x18\x03 \x01(\tR\x05jobId\"2\n" +
+	"\x06job_id\x18\x03 \x01(\tR\x05jobId\"G\n" +
 	"\aCommand\x12\b\n" +
 	"\x04PING\x10\x00\x12\x0e\n" +
 	"\n" +
 	"START_SYNC\x10\x01\x12\r\n" +
-	"\tSTOP_SYNC\x10\x02\"{\n" +
+	"\tSTOP_SYNC\x10\x02\x12\x13\n" +
+	"\x0fTEST_CONNECTION\x10\x03\"{\n" +
 	"\tDataBatch\x12\x15\n" +
 	"\x06job_id\x18\x01 \x01(\tR\x05jobId\x12\x1d\n" +
 	"\n" +
@@ -440,69 +517,73 @@ const file_agent_proto_rawDesc = "" +
 	"\asuccess\x18\x02 \x01(\bR\asuccess\x12#\n" +
 	"\rrows_affected\x18\x03 \x01(\x03R\frowsAffected\x12#\n" +
 	"\rerror_message\x18\x04 \x01(\tR\ferrorMessage\"\a\n" +
-	"\x05Empty2v\n" +
+	"\x05Empty2\xb5\x01\n" +
 	"\tSyncAgent\x126\n" +
 	"\aSession\x12\x10.agent.Heartbeat\x1a\x15.agent.ControlMessage(\x010\x01\x121\n" +
-	"\bPushData\x12\x10.agent.DataBatch\x1a\x11.agent.SyncResult(\x01B\x18Z\x16./internal/agent/protob\x06proto3"
+	"\bPushData\x12\x10.agent.DataBatch\x1a\x11.agent.SyncResult(\x01\x12=\n" +
+	"\x10ReportTestResult\x12\x1b.agent.ConnectionTestResult\x1a\f.agent.EmptyB\x18Z\x16./internal/agent/protob\x06proto3"
 
 var (
-	file_agent_proto_rawDescOnce sync.Once
-	file_agent_proto_rawDescData []byte
+	file_proto_agent_proto_rawDescOnce sync.Once
+	file_proto_agent_proto_rawDescData []byte
 )
 
-func file_agent_proto_rawDescGZIP() []byte {
-	file_agent_proto_rawDescOnce.Do(func() {
-		file_agent_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_agent_proto_rawDesc), len(file_agent_proto_rawDesc)))
+func file_proto_agent_proto_rawDescGZIP() []byte {
+	file_proto_agent_proto_rawDescOnce.Do(func() {
+		file_proto_agent_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_agent_proto_rawDesc), len(file_proto_agent_proto_rawDesc)))
 	})
-	return file_agent_proto_rawDescData
+	return file_proto_agent_proto_rawDescData
 }
 
-var file_agent_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
-var file_agent_proto_goTypes = []any{
-	(ControlMessage_Command)(0), // 0: agent.ControlMessage.Command
-	(*Heartbeat)(nil),           // 1: agent.Heartbeat
-	(*ControlMessage)(nil),      // 2: agent.ControlMessage
-	(*DataBatch)(nil),           // 3: agent.DataBatch
-	(*Row)(nil),                 // 4: agent.Row
-	(*SyncResult)(nil),          // 5: agent.SyncResult
-	(*Empty)(nil),               // 6: agent.Empty
+var file_proto_agent_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_proto_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_proto_agent_proto_goTypes = []any{
+	(ControlMessage_Command)(0),  // 0: agent.ControlMessage.Command
+	(*Heartbeat)(nil),            // 1: agent.Heartbeat
+	(*ConnectionTestResult)(nil), // 2: agent.ConnectionTestResult
+	(*ControlMessage)(nil),       // 3: agent.ControlMessage
+	(*DataBatch)(nil),            // 4: agent.DataBatch
+	(*Row)(nil),                  // 5: agent.Row
+	(*SyncResult)(nil),           // 6: agent.SyncResult
+	(*Empty)(nil),                // 7: agent.Empty
 }
-var file_agent_proto_depIdxs = []int32{
+var file_proto_agent_proto_depIdxs = []int32{
 	0, // 0: agent.ControlMessage.cmd:type_name -> agent.ControlMessage.Command
-	4, // 1: agent.DataBatch.rows:type_name -> agent.Row
+	5, // 1: agent.DataBatch.rows:type_name -> agent.Row
 	1, // 2: agent.SyncAgent.Session:input_type -> agent.Heartbeat
-	3, // 3: agent.SyncAgent.PushData:input_type -> agent.DataBatch
-	2, // 4: agent.SyncAgent.Session:output_type -> agent.ControlMessage
-	5, // 5: agent.SyncAgent.PushData:output_type -> agent.SyncResult
-	4, // [4:6] is the sub-list for method output_type
-	2, // [2:4] is the sub-list for method input_type
+	4, // 3: agent.SyncAgent.PushData:input_type -> agent.DataBatch
+	2, // 4: agent.SyncAgent.ReportTestResult:input_type -> agent.ConnectionTestResult
+	3, // 5: agent.SyncAgent.Session:output_type -> agent.ControlMessage
+	6, // 6: agent.SyncAgent.PushData:output_type -> agent.SyncResult
+	7, // 7: agent.SyncAgent.ReportTestResult:output_type -> agent.Empty
+	5, // [5:8] is the sub-list for method output_type
+	2, // [2:5] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
 	2, // [2:2] is the sub-list for extension extendee
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_agent_proto_init() }
-func file_agent_proto_init() {
-	if File_agent_proto != nil {
+func init() { file_proto_agent_proto_init() }
+func file_proto_agent_proto_init() {
+	if File_proto_agent_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_agent_proto_rawDesc), len(file_agent_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_agent_proto_rawDesc), len(file_proto_agent_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_agent_proto_goTypes,
-		DependencyIndexes: file_agent_proto_depIdxs,
-		EnumInfos:         file_agent_proto_enumTypes,
-		MessageInfos:      file_agent_proto_msgTypes,
+		GoTypes:           file_proto_agent_proto_goTypes,
+		DependencyIndexes: file_proto_agent_proto_depIdxs,
+		EnumInfos:         file_proto_agent_proto_enumTypes,
+		MessageInfos:      file_proto_agent_proto_msgTypes,
 	}.Build()
-	File_agent_proto = out.File
-	file_agent_proto_goTypes = nil
-	file_agent_proto_depIdxs = nil
+	File_proto_agent_proto = out.File
+	file_proto_agent_proto_goTypes = nil
+	file_proto_agent_proto_depIdxs = nil
 }

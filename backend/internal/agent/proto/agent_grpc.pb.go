@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.1
 // - protoc             v4.25.9
-// source: agent.proto
+// source: proto/agent.proto
 
 package proto
 
@@ -19,8 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	SyncAgent_Session_FullMethodName  = "/agent.SyncAgent/Session"
-	SyncAgent_PushData_FullMethodName = "/agent.SyncAgent/PushData"
+	SyncAgent_Session_FullMethodName          = "/agent.SyncAgent/Session"
+	SyncAgent_PushData_FullMethodName         = "/agent.SyncAgent/PushData"
+	SyncAgent_ReportTestResult_FullMethodName = "/agent.SyncAgent/ReportTestResult"
 )
 
 // SyncAgentClient is the client API for SyncAgent service.
@@ -31,6 +32,8 @@ type SyncAgentClient interface {
 	Session(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[Heartbeat, ControlMessage], error)
 	// Agent pushes data to Master during a sync job
 	PushData(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[DataBatch, SyncResult], error)
+	// Agent reports the result of a network test back to Master
+	ReportTestResult(ctx context.Context, in *ConnectionTestResult, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type syncAgentClient struct {
@@ -67,6 +70,16 @@ func (c *syncAgentClient) PushData(ctx context.Context, opts ...grpc.CallOption)
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type SyncAgent_PushDataClient = grpc.ClientStreamingClient[DataBatch, SyncResult]
 
+func (c *syncAgentClient) ReportTestResult(ctx context.Context, in *ConnectionTestResult, opts ...grpc.CallOption) (*Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, SyncAgent_ReportTestResult_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SyncAgentServer is the server API for SyncAgent service.
 // All implementations must embed UnimplementedSyncAgentServer
 // for forward compatibility.
@@ -75,6 +88,8 @@ type SyncAgentServer interface {
 	Session(grpc.BidiStreamingServer[Heartbeat, ControlMessage]) error
 	// Agent pushes data to Master during a sync job
 	PushData(grpc.ClientStreamingServer[DataBatch, SyncResult]) error
+	// Agent reports the result of a network test back to Master
+	ReportTestResult(context.Context, *ConnectionTestResult) (*Empty, error)
 	mustEmbedUnimplementedSyncAgentServer()
 }
 
@@ -90,6 +105,9 @@ func (UnimplementedSyncAgentServer) Session(grpc.BidiStreamingServer[Heartbeat, 
 }
 func (UnimplementedSyncAgentServer) PushData(grpc.ClientStreamingServer[DataBatch, SyncResult]) error {
 	return status.Error(codes.Unimplemented, "method PushData not implemented")
+}
+func (UnimplementedSyncAgentServer) ReportTestResult(context.Context, *ConnectionTestResult) (*Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReportTestResult not implemented")
 }
 func (UnimplementedSyncAgentServer) mustEmbedUnimplementedSyncAgentServer() {}
 func (UnimplementedSyncAgentServer) testEmbeddedByValue()                   {}
@@ -126,13 +144,36 @@ func _SyncAgent_PushData_Handler(srv interface{}, stream grpc.ServerStream) erro
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type SyncAgent_PushDataServer = grpc.ClientStreamingServer[DataBatch, SyncResult]
 
+func _SyncAgent_ReportTestResult_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConnectionTestResult)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SyncAgentServer).ReportTestResult(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SyncAgent_ReportTestResult_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SyncAgentServer).ReportTestResult(ctx, req.(*ConnectionTestResult))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SyncAgent_ServiceDesc is the grpc.ServiceDesc for SyncAgent service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var SyncAgent_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "agent.SyncAgent",
 	HandlerType: (*SyncAgentServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ReportTestResult",
+			Handler:    _SyncAgent_ReportTestResult_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "Session",
@@ -146,5 +187,5 @@ var SyncAgent_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "agent.proto",
+	Metadata: "proto/agent.proto",
 }

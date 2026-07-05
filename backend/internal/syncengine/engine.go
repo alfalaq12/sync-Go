@@ -2,10 +2,12 @@ package syncengine
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/bintang/remake-dsp-backend/internal/agent/proto"
@@ -32,14 +34,52 @@ func (e *Engine) SetAgentManager(am *AgentManager) {
 	e.agentManager = am
 }
 
+func (e *Engine) getSetting(ctx context.Context, key string, defaultVal string) string {
+	if e.db == nil {
+		return defaultVal
+	}
+	var val string
+	err := e.db.QueryRow(ctx, "SELECT value FROM S_SETTINGS WHERE key = $1", key).Scan(&val)
+	if err != nil {
+		return defaultVal
+	}
+	return val
+}
+
+func (e *Engine) getSettingInt(ctx context.Context, key string, defaultVal int) int {
+	str := e.getSetting(ctx, key, "")
+	if str == "" {
+		return defaultVal
+	}
+	var val int
+	_, err := fmt.Sscanf(str, "%d", &val)
+	if err != nil {
+		return defaultVal
+	}
+	return val
+}
+
 // ExecuteSync runs an ETL job for a specific job ID
 func (e *Engine) ExecuteSync(ctx context.Context, jobID int) error {
-	// 1. Load Job, Network, and Schema info
-	var networkID, schemaID int
-	var sourceNodeID, targetNodeID *int
+	if e.db == nil {
+		return fmt.Errorf("database pool is not initialized")
+	}
+
+	// 1. Enforce Max Concurrent Jobs configuration
+	maxJobs := e.getSettingInt(ctx, "cons_max_jobs", 10)
+	var runningCount int
+	_ = e.db.QueryRow(ctx, "SELECT COUNT(*) FROM SD_JOBS WHERE status = 'running'").Scan(&runningCount)
+	if runningCount >= maxJobs {
+		e.LogToDB(ctx, jobID, nil, "WARNING", "Engine", fmt.Sprintf("Execution deferred: system-wide concurrent jobs limit reached (%d/%d)", runningCount, maxJobs))
+		return fmt.Errorf("concurrent jobs execution limit reached (%d)", maxJobs)
+	}
+
+	// 2. Load Job, Network, and Schema info
+	var networkID int
+	var schemaID, sourceNodeID, targetNodeID *int
 	var lastSyncValue *string
-	var isSourceDistributed bool
-	var sourceNodeCode string
+	var isSourceDistributed *bool
+	var sourceNodeCode *string
 	
 	err := e.db.QueryRow(ctx, `
 		SELECT j.network_id, j.schema_id, j.source_node_id, j.target_node_id, n.last_sync_value, 
@@ -52,6 +92,11 @@ func (e *Engine) ExecuteSync(ctx context.Context, jobID int) error {
 	if err != nil {
 		e.LogToDB(ctx, jobID, nil, "ERROR", "Engine", fmt.Sprintf("Failed to load job: %v", err))
 		return fmt.Errorf("failed to load job: %v", err)
+	}
+
+	if schemaID == nil {
+		e.LogToDB(ctx, jobID, nil, "ERROR", "Engine", "No Schema (Table Mapping) assigned to this job/network. Please select a schema in the network configuration.")
+		return fmt.Errorf("no schema assigned to this job")
 	}
 
 	e.LogToDB(ctx, jobID, sourceNodeID, "INFO", "Engine", fmt.Sprintf("Starting synchronization job #%d", jobID))
@@ -143,6 +188,23 @@ func (e *Engine) ExecuteSync(ctx context.Context, jobID int) error {
 		return err
 	}
 
+	// 5. Test initial network path connections with timeout (default 300 seconds)
+	timeoutSecs := e.getSettingInt(ctx, "cons_query_timeout", 300)
+	handshakeCtx, cancelHandshake := context.WithTimeout(ctx, time.Duration(timeoutSecs)*time.Second)
+	defer cancelHandshake()
+
+	e.LogToDB(ctx, jobID, sourceNodeID, "INFO", "Engine", "Verifying source network connection path...")
+	if err := sourceDriver.TestConnection(handshakeCtx, net); err != nil {
+		e.LogToDB(ctx, jobID, sourceNodeID, "ERROR", "Engine", fmt.Sprintf("Source connection handshake failed: %v", err))
+		return fmt.Errorf("source connection failure: %v", err)
+	}
+
+	e.LogToDB(ctx, jobID, targetNodeID, "INFO", "Engine", "Verifying target destination connection path...")
+	if err := targetDriver.TestConnection(handshakeCtx, target); err != nil {
+		e.LogToDB(ctx, jobID, targetNodeID, "ERROR", "Engine", fmt.Sprintf("Target connection handshake failed: %v", err))
+		return fmt.Errorf("target connection failure: %v", err)
+	}
+
 	totalExtracted := int64(0)
 	totalUploaded := int64(0)
 
@@ -222,17 +284,31 @@ func (e *Engine) ExecuteSync(ctx context.Context, jobID int) error {
 		}
 
 		// D. Pipelined Stream Extract & Load
-		if isSourceDistributed && e.agentManager != nil {
-			e.LogToDB(ctx, jobID, sourceNodeID, "INFO", "Distributed", fmt.Sprintf("Dispatching extraction to remote agent: %s", sourceNodeCode))
+		if isSourceDistributed != nil && *isSourceDistributed && e.agentManager != nil {
+			nodeCodeStr := ""
+			if sourceNodeCode != nil {
+				nodeCodeStr = *sourceNodeCode
+			}
+			e.LogToDB(ctx, jobID, sourceNodeID, "INFO", "Distributed", fmt.Sprintf("Dispatching extraction to remote agent: %s", nodeCodeStr))
 			
 			// Setup receiver channel
 			dataCh := make(chan *proto.DataBatch, 100)
 			defer e.agentManager.CleanupJob(fmt.Sprintf("%d", jobID))
 
 			// Build payload for agent (JSON containing SQ and net config)
-			payload := fmt.Sprintf(`{"query": %q, "batch_size": %d}`, sq, batchSize)
-			
-			err = e.agentManager.DispatchSync(ctx, sourceNodeCode, fmt.Sprintf("%d", jobID), payload, dataCh)
+			payloadObj := struct {
+				Query     string                   `json:"query"`
+				BatchSize int                      `json:"batch_size"`
+				Config    drivers.ConnectionConfig `json:"config"`
+			}{
+				Query:     sq,
+				BatchSize: batchSize,
+				Config:    net,
+			}
+			payloadBytes, _ := json.Marshal(payloadObj)
+			payload := string(payloadBytes)
+
+			err = e.agentManager.DispatchSync(ctx, nodeCodeStr, fmt.Sprintf("%d", jobID), payload, dataCh)
 			if err != nil {
 				return err
 			}
@@ -321,7 +397,7 @@ func (e *Engine) ExecuteSync(ctx context.Context, jobID int) error {
 		})
 
 		// 2. CONSUMER GOROUTINES: Loading (Worker Pool)
-		workerCount := 8
+		workerCount := e.getSettingInt(ctx, "cons_worker_threads", 4)
 		for i := 0; i < workerCount; i++ {
 			g.Go(func() error {
 				for pkg := range chunkChan {
