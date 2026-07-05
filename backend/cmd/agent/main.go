@@ -252,7 +252,11 @@ func handleSyncJob(client proto.SyncAgentClient, msg *proto.ControlMessage) {
 		for i, r := range chunk {
 			vals := make([]string, len(r))
 			for j, v := range r {
-				vals[j] = fmt.Sprintf("%v", v) // Simple string conversion for prototype
+				if v == nil {
+					vals[j] = "__DSP_NULL__"
+				} else {
+					vals[j] = fmt.Sprintf("%v", v)
+				}
 			}
 			protoRows[i] = &proto.Row{Values: vals}
 		}

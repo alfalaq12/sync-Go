@@ -339,7 +339,11 @@ func (e *Engine) ExecuteSync(ctx context.Context, jobID int) error {
 						for i, r := range batch.Rows {
 							row := make([]any, len(r.Values))
 							for j, v := range r.Values {
-								row[j] = v
+								if v == "__DSP_NULL__" {
+									row[j] = nil
+								} else {
+									row[j] = v
+								}
 							}
 							chunk[i] = row
 						}
