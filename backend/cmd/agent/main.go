@@ -56,10 +56,6 @@ func main() {
 	if val := os.Getenv("TLS_CERT_PATH"); val != "" { cfg.TLSClientCert = val }
 	if val := os.Getenv("TLS_KEY_PATH"); val != "" { cfg.TLSClientKey = val }
 
-	if cfg.LocalDBURL == "" {
-		log.Fatalf("Error: --db-url is required. Example: postgres://user:pass@localhost:5432/dbname")
-	}
-
 	log.Printf("Sync-Go Agent [%s] starting. Connecting to Master at %s...", cfg.NodeCode, cfg.MasterAddr)
 
 	var dialOpts []grpc.DialOption
