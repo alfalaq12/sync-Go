@@ -2,9 +2,11 @@ package syncengine
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -339,11 +341,7 @@ func (e *Engine) ExecuteSync(ctx context.Context, jobID int) error {
 						for i, r := range batch.Rows {
 							row := make([]any, len(r.Values))
 							for j, v := range r.Values {
-								if v == "__DSP_NULL__" {
-									row[j] = nil
-								} else {
-									row[j] = v
-								}
+								row[j] = deserializeValue(v)
 							}
 							chunk[i] = row
 						}
@@ -482,3 +480,30 @@ func (e *Engine) LogToDB(ctx context.Context, jobID int, nodeID *int, level, sou
 		log.Printf("Failed to write system log to DB: %v", err)
 	}
 }
+
+func deserializeValue(s string) any {
+	if s == "__DSP_NULL__" {
+		return nil
+	}
+	if strings.HasPrefix(s, "__DSP_TIME__:") {
+		t, _ := time.Parse(time.RFC3339Nano, s[13:])
+		return t
+	}
+	if strings.HasPrefix(s, "__DSP_BYTES__:") {
+		b, _ := base64.StdEncoding.DecodeString(s[14:])
+		return b
+	}
+	if strings.HasPrefix(s, "__DSP_BOOL__:") {
+		return s[13:] == "true"
+	}
+	if strings.HasPrefix(s, "__DSP_INT__:") {
+		i, _ := strconv.ParseInt(s[12:], 10, 64)
+		return int32(i) // Return int32 since pgx prefers int32 for INT4
+	}
+	if strings.HasPrefix(s, "__DSP_FLOAT__:") {
+		f, _ := strconv.ParseFloat(s[14:], 64)
+		return f
+	}
+	return s
+}
+

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -252,11 +253,7 @@ func handleSyncJob(client proto.SyncAgentClient, msg *proto.ControlMessage) {
 		for i, r := range chunk {
 			vals := make([]string, len(r))
 			for j, v := range r {
-				if v == nil {
-					vals[j] = "__DSP_NULL__"
-				} else {
-					vals[j] = fmt.Sprintf("%v", v)
-				}
+				vals[j] = serializeValue(v)
 			}
 			protoRows[i] = &proto.Row{Values: vals}
 		}
@@ -282,3 +279,24 @@ func handleSyncJob(client proto.SyncAgentClient, msg *proto.ControlMessage) {
 		log.Printf("[Job %s] Distributed sync completed. Master Ack: %v", msg.JobId, result.Success)
 	}
 }
+
+func serializeValue(v any) string {
+	if v == nil {
+		return "__DSP_NULL__"
+	}
+	switch val := v.(type) {
+	case time.Time:
+		return "__DSP_TIME__:" + val.Format(time.RFC3339Nano)
+	case []byte:
+		return "__DSP_BYTES__:" + base64.StdEncoding.EncodeToString(val)
+	case bool:
+		return fmt.Sprintf("__DSP_BOOL__:%t", val)
+	case int, int8, int16, int32, int64:
+		return fmt.Sprintf("__DSP_INT__:%d", val)
+	case float32, float64:
+		return fmt.Sprintf("__DSP_FLOAT__:%f", val)
+	default:
+		return fmt.Sprintf("%v", v)
+	}
+}
+
