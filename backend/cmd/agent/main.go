@@ -245,6 +245,19 @@ func handleSyncJob(client proto.SyncAgentClient, msg *proto.ControlMessage) {
 		return
 	}
 
+	// Send an initial empty batch to ensure the Master registers the JobID in the stream
+	// This prevents deadlocks if StreamExtract finds 0 rows and never sends a batch.
+	err = pushStream.Send(&proto.DataBatch{
+		JobId:     msg.JobId,
+		TableName: "header_only",
+		Columns:   []string{},
+		Rows:      []*proto.Row{},
+	})
+	if err != nil {
+		log.Printf("[Job %s] Failed to send initial header batch: %v", msg.JobId, err)
+		return
+	}
+
 	// Extract in chunks and push
 	err = drv.StreamExtract(context.Background(), payload.Config, payload.Query, payload.BatchSize, func(columns []string, chunk [][]any) error {
 		log.Printf("[Job %s] Pushing batch of %d rows...", msg.JobId, len(chunk))
